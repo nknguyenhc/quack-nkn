@@ -6,8 +6,8 @@
   "scripts": {
     "start": "nodemon index.ts",
     "run": "ts-node index.ts",
-    "migrate": "ts-node users/db.ts migrate",
-    "clear": "ts-node users/db.ts clear"
+    "migrate": "ts-node users/db.ts migrate && ts-node reminder/db.ts migrate",
+    "clear": "ts-node users/db.ts clear && ts-node reminder/db.ts clear"
   },
   "author": "Nguyen",
   "license": "ISC",

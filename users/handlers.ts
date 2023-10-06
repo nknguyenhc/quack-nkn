@@ -1,6 +1,6 @@
 import TelegramBot, { Message } from "node-telegram-bot-api";
 import { User } from './db';
-import { TextHandler } from '../types/types';
+import { TextHandler } from '../utils/types';
 
 const startHandler: TextHandler = {
     command: /\/start/,
@@ -9,6 +9,7 @@ const startHandler: TextHandler = {
         await User.findOrCreate({
             where: {
                 chatId: chatId,
+                username: msg.chat.username,
             },
         });
         bot.sendMessage(chatId, 'Hello! I am your TypeScript Telegram bot.');

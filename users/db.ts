@@ -1,24 +1,33 @@
-import { Sequelize, DataTypes } from 'sequelize';
+import { DataTypes, Model } from 'sequelize';
+import { getConnection } from '../utils/db';
+import { Reminder } from '../reminder/db';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const sequelize = new Sequelize(
-    process.env.DATABASE_NAME as string,
-    process.env.DATABASE_USERNAME as string,
-    process.env.DATABASE_PASSWORD as string,
-    {
-        host: process.env.DATABASE_HOST as string,
-        port: Number(process.env.DATABASE_PORT),
-        dialect: 'postgres',
-    }
-);
+const sequelize = getConnection();
 
-export const User = sequelize.define('User', {
+type UserType = {
+    chatId: number,
+    username: string | undefined,
+}
+
+export const User = sequelize.define<Model<UserType>>('User', {
     chatId: {
         type: DataTypes.INTEGER,
         primaryKey: true,
-    }
+    },
+    username: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+});
+
+User.hasMany(Reminder, {
+    foreignKey: {
+        name: 'userChatId',
+        allowNull: false,
+    },
 });
 
 switch (process.argv[2]) {
