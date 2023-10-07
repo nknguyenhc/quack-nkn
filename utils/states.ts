@@ -5,6 +5,9 @@ enum STATE {
     // reminder
     REMINDER_START,
     REMINDER_FREQUENCY,
+    REMINDER_DAILY,
+    REMINDER_WEEKLY,
+    REMINDER_ONCE,
 }
 
 type Dict = {
@@ -21,6 +24,10 @@ class UserStates {
         return UserStates.#states[chatId];
     }
     static setUserState(chatId: number, state: STATE): void {
+        if (state === STATE.NORMAL) {
+            delete UserStates.#states[chatId];
+            return;
+        }
         UserStates.#states[chatId] = state;
     }
 }

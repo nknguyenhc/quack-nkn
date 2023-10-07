@@ -1,4 +1,4 @@
-import TelegramBot, { CallbackQuery, Message } from "node-telegram-bot-api";
+import TelegramBot, { CallbackQuery, InlineKeyboardButton, Message } from "node-telegram-bot-api";
 
 export type TextHandler = {
     command: RegExp,
@@ -12,3 +12,8 @@ export type PlainHandler = {
 export type PollAnswerHandler = {
     handler: (bot: TelegramBot) => (query: CallbackQuery) => void,
 }
+
+export type PollType = {
+    question: string,
+    options: InlineKeyboardButton[][],
+};

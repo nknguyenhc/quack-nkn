@@ -1,8 +1,10 @@
 import { FrequencyType, Reminder } from "./db";
+import { formatDate, numberToTime } from '../utils/primitives';
 
 type ReminderTemp = {
     content?: string,
     frequency?: FrequencyType,
+    time?: number,
 };
 
 type Dict = {
@@ -24,8 +26,72 @@ class ReminderMemory {
         ReminderMemory.#reminders[chatId].frequency = frequency;
     }
 
+    static setTime(chatId: number, time: number) {
+        ReminderMemory.#reminders[chatId].time = time;
+    }
+
+    static #numberToTime(number: number, frequency: FrequencyType): string {
+        switch (frequency) {
+            case 'daily':
+                return `everyday ${numberToTime(number)}`;
+            case 'weekly':
+                return ReminderMemory.weeklyNumberToString(number);
+            case 'once':
+                return `at ${formatDate(new Date(number * 1000))}`;
+        }
+    }
+
+    static weeklyNumberToString(number: number): string {
+        let dayString: string = '';
+        let timeString: string = '';
+        switch (Math.floor(number / 4)) {
+            case 0:
+                dayString = 'Mon';
+                break;
+            case 1:
+                dayString = 'Tue';
+                break;
+            case 2:
+                dayString = 'Wed';
+                break;
+            case 3:
+                dayString = 'Thu';
+                break;
+            case 4:
+                dayString = 'Fri';
+                break;
+            case 5:
+                dayString = 'Sat';
+                break;
+            case 6:
+                dayString = 'Sun';
+                break;
+        }
+        switch (number % 4) {
+            case 0:
+                timeString = '6AM';
+                break;
+            case 1:
+                timeString = '12PM';
+                break;
+            case 2:
+                timeString = '6PM';
+                break;
+            case 3:
+                timeString = '10PM';
+                break;
+        }
+        return `every week ${dayString} ${timeString}`;
+    }
+
     static getReminder(chatId: number): string {
-        return `"${ReminderMemory.#reminders[chatId].content}" ${ReminderMemory.#reminders[chatId].frequency}`;
+        const result: string = `"${ReminderMemory.#reminders[chatId].content}" ${
+            ReminderMemory.#numberToTime(
+                ReminderMemory.#reminders[chatId].time,
+                ReminderMemory.#reminders[chatId].frequency,
+            )}`;
+        delete ReminderMemory.#reminders[chatId];
+        return result;
     }
 
     static async build(chatId: number): Promise<void> {
@@ -33,6 +99,7 @@ class ReminderMemory {
             content: ReminderMemory.#reminders[chatId].content,
             frequency: ReminderMemory.#reminders[chatId].frequency,
             userChatId: chatId,
+            time: ReminderMemory.#reminders[chatId].time,
         });
     }
 }

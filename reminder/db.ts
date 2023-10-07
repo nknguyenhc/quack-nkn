@@ -6,12 +6,13 @@ dotenv.config();
 
 const sequelize = getConnection();
 
-export type FrequencyType = 'daily' | 'weekly' | 'monthly';
+export type FrequencyType = 'daily' | 'weekly' | 'once';
 
 type ReminderType = {
     content: string,
     frequency: FrequencyType,
     userChatId: number,
+    time: number,
 }
 
 export const Reminder = sequelize.define<Model<ReminderType>>('Reminder', {
@@ -26,7 +27,11 @@ export const Reminder = sequelize.define<Model<ReminderType>>('Reminder', {
     userChatId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-    }
+    },
+    time: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
 });
 
 switch (process.argv[2]) {
