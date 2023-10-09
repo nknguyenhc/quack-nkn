@@ -4,10 +4,18 @@ enum STATE {
 
     // reminder
     REMINDER_START,
+
+    REMINDER_ADD,
     REMINDER_FREQUENCY,
     REMINDER_DAILY,
     REMINDER_WEEKLY,
     REMINDER_ONCE,
+
+    REMINDER_VIEW,
+
+    REMINDER_EDIT,
+
+    REMINDER_DELETE,
 }
 
 type Dict = {

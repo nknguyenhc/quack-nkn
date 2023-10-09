@@ -13,16 +13,60 @@ const remindStartHandler: TextHandler = {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
             UserStates.setUserState(chatId, UserStates.STATE.REMINDER_START);
+            bot.sendMessage(chatId, 
+                'What do you wish to do?\n'
+                + '/add - add a new reminder\n'
+                + '/list - view your current reminders\n'
+                + '/edit - edit one of your reminders\n'
+                + '/delete - delete one of your reminders');
+        }
+    },
+};
+
+const reminderAddHandler: TextHandler = {
+    command: /\/add/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_START) {
+            UserStates.setUserState(chatId, UserStates.STATE.REMINDER_ADD);
             ReminderMemory.setUser(chatId);
             bot.sendMessage(chatId, 'Alright, I am setting up a reminder for you. What do you want to remind yourself with?');
         }
-    },
+    }
+};
+
+const reminderListHandler: TextHandler = {
+    command: /\/list/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_START) {
+            const allReminders = await Reminder.findAll({
+                where: {
+                    userChatId: chatId,
+                },
+            });
+            let message = 'Alright, here is your list of reminders:';
+            allReminders.forEach((reminder, reminderIndex) => {
+                message += `\n${
+                    reminderIndex + 1
+                }. ${
+                    reminder.dataValues.content
+                } (${
+                    reminder.dataValues.frequency
+                }) at ${
+                    ReminderMemory.numberToTime(reminder.dataValues.time, reminder.dataValues.frequency)
+                }`;
+            });
+            bot.sendMessage(chatId, message);
+            UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+        }
+    }
 };
 
 const reminderSetContentHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_START) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_ADD) {
             ReminderMemory.setContent(chatId, msg.text);
             UserStates.setUserState(chatId, UserStates.STATE.REMINDER_FREQUENCY);
             bot.sendMessage(chatId, frequencyPoll.question, {
@@ -202,6 +246,8 @@ const reminderOnceHandler: PlainHandler = {
 
 export const textReminderHandlers: Array<TextHandler> = [
     remindStartHandler,
+    reminderAddHandler,
+    reminderListHandler,
 ];
 
 export const plainReminderHandlers: Array<PlainHandler> = [

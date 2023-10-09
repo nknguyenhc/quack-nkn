@@ -13,7 +13,14 @@ const startHandler: TextHandler = {
                 username: msg.chat.username,
             },
         });
-        bot.sendMessage(chatId, 'Hello! I am your TypeScript Telegram bot.');
+        bot.sendMessage(chatId, 
+            'Hello! Welcome to quack-nkn!\n'
+            + 'This bot helps you set reminders for yourself and track websites (coming soon)\n'
+            + 'My boss is Nguyen, you can find out more about him here: https://nknguyenhc.github.io/ \n'
+            + 'Here is the list of available commands:\n'
+            + '/start - show this message\n'
+            + '/reminder - add, view, edit or delete your reminders\n'
+            + '/cancel - at anytime when you wish to cancel what you are doing, you may use this command');
     }
 };
 

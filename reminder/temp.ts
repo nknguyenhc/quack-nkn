@@ -31,7 +31,7 @@ class ReminderMemory {
         ReminderMemory.#reminders[chatId].time = time;
     }
 
-    static #numberToTime(number: number, frequency: FrequencyType): string {
+    static numberToTime(number: number, frequency: FrequencyType): string {
         switch (frequency) {
             case 'daily':
                 return `everyday ${numberToTime(number)}`;
@@ -87,7 +87,7 @@ class ReminderMemory {
 
     static getReminder(chatId: number): string {
         const result: string = `"${ReminderMemory.#reminders[chatId].content}" ${
-            ReminderMemory.#numberToTime(
+            ReminderMemory.numberToTime(
                 ReminderMemory.#reminders[chatId].time,
                 ReminderMemory.#reminders[chatId].frequency,
             )}`;
