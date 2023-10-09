@@ -1,14 +1,14 @@
 import { DataTypes, Model } from "sequelize";
 import { getConnection } from '../utils/db';
+import { FrequencyType } from '../utils/schedule';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 const sequelize = getConnection();
 
-export type FrequencyType = 'daily' | 'weekly' | 'once';
-
 type ReminderType = {
+    id: string,
     content: string,
     frequency: FrequencyType,
     userChatId: number,
@@ -16,6 +16,10 @@ type ReminderType = {
 }
 
 export const Reminder = sequelize.define<Model<ReminderType>>('Reminder', {
+    id: {
+        type: DataTypes.STRING,
+        primaryKey: true,
+    },
     content: {
         type: DataTypes.STRING,
         allowNull: false,

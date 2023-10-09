@@ -53,3 +53,12 @@ export const parseDateTime = (str: string): Date | undefined => {
     }
     return new Date(year, month - 1, day, hour, minute);
 }
+
+export const getRandomString = (): string => {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 20; i++) {
+        result += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return result;
+}

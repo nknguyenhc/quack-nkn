@@ -2,30 +2,20 @@ import TelegramBot, { CallbackQuery, Message } from "node-telegram-bot-api";
 import ReminderMemory from './temp';
 import { TextHandler, PlainHandler, PollAnswerHandler } from '../utils/types';
 import UserStates from '../utils/states';
-import { FrequencyType } from "./db";
+import { Reminder } from "./db";
 import { dailyPoll, frequencyPoll, weeklyPoll } from './data';
 import { numberToTime, parseDateTime } from "../utils/primitives";
-import { scheduleJob } from "node-schedule";
-
-const setReminder = (number: number, frequency: FrequencyType): void => {
-    switch (frequency) {
-        case 'daily':
-            scheduleJob
-            break;
-        case 'weekly':
-            break;
-        case 'once':
-            break;
-    }
-}
+import { FrequencyType, setReminder } from "../utils/schedule";
 
 const remindStartHandler: TextHandler = {
     command: /\/reminder/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
-        UserStates.setUserState(chatId, UserStates.STATE.REMINDER_START);
-        ReminderMemory.setUser(chatId);
-        bot.sendMessage(chatId, 'Alright, I am setting up a reminder for you. What do you want to remind yourself with?');
+        if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
+            UserStates.setUserState(chatId, UserStates.STATE.REMINDER_START);
+            ReminderMemory.setUser(chatId);
+            bot.sendMessage(chatId, 'Alright, I am setting up a reminder for you. What do you want to remind yourself with?');
+        }
     },
 };
 
@@ -39,6 +29,8 @@ const reminderSetContentHandler: PlainHandler = {
                 reply_markup: {
                     inline_keyboard: frequencyPoll.options,
                 },
+            }).then(msg => {
+                UserStates.setUserQuestionId(chatId, msg.message_id);
             });
         }
     },
@@ -68,6 +60,8 @@ const reminderFrequencyHandler: PollAnswerHandler = {
                         reply_markup: {
                             inline_keyboard: dailyPoll.options,
                         },
+                    }).then(msg => {
+                        UserStates.setUserQuestionId(chatId, msg.message_id);
                     });
                     break;
                 case 'weekly':
@@ -76,13 +70,18 @@ const reminderFrequencyHandler: PollAnswerHandler = {
                         reply_markup: {
                             inline_keyboard: weeklyPoll.options,
                         },
+                    }).then(msg => {
+                        UserStates.setUserQuestionId(chatId, msg.message_id);
                     });
                     break;
                 case 'once':
                     UserStates.setUserState(chatId, UserStates.STATE.REMINDER_ONCE);
                     bot.sendMessage(chatId, 
                         'When do you want me to remind you?\n'
-                        + 'Please key in time in the following format: DD/MM/YYYY HH:MM');
+                        + 'Please key in time in the following format: DD/MM/YYYY HH:MM'
+                    ).then(msg => {
+                        UserStates.setUserQuestionId(chatId, msg.message_id);
+                    });
                     break;
             }
         }
@@ -106,7 +105,21 @@ const reminderDailyHandler: PollAnswerHandler = {
                 },
             );
             
-            await ReminderMemory.build(chatId);
+            const id = await ReminderMemory.build(chatId);
+            const message = ReminderMemory.getMessage(chatId);
+            const isValid = () => Reminder.findOne({
+                where: {
+                    id: id,
+                },
+            }).then(reminder => reminder !== null);
+            const job = () => bot.sendMessage(chatId, message);
+            setReminder({
+                number: selectedOption,
+                frequency: 'daily',
+                job: job,
+                isValid: isValid,
+            });
+
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
             bot.sendMessage(chatId, `Alright, I have set reminder for ${ReminderMemory.getReminder(chatId)}.`);
         }
@@ -130,7 +143,21 @@ const reminderWeeklyHandler: PollAnswerHandler = {
                 },
             );
 
-            await ReminderMemory.build(chatId);
+            const id = await ReminderMemory.build(chatId);
+            const message = ReminderMemory.getMessage(chatId);
+            const isValid = () => Reminder.findOne({
+                where: {
+                    id: id,
+                },
+            }).then(reminder => reminder !== null);
+            const job = () => bot.sendMessage(chatId, message);
+            setReminder({
+                number: selectedOption,
+                frequency: 'weekly',
+                job: job,
+                isValid: isValid,
+            });
+
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
             bot.sendMessage(chatId, `Alright, I have set reminder for ${ReminderMemory.getReminder(chatId)}.`);
         }
@@ -146,9 +173,27 @@ const reminderOnceHandler: PlainHandler = {
                 bot.sendMessage(chatId, "Oops, I do not understand your datetime.");
                 return;
             }
+            if (date < new Date()) {
+                bot.sendMessage(chatId, "Oops, you cannot send reminder for something in the past.");
+                return;
+            }
             ReminderMemory.setTime(chatId, date.getTime() / 1000);
 
-            await ReminderMemory.build(chatId);
+            const id = await ReminderMemory.build(chatId);
+            const message = ReminderMemory.getMessage(chatId);
+            const isValid = () => Reminder.findOne({
+                where: {
+                    id: id,
+                }
+            }).then(reminder => reminder !== null);
+            const job = () => bot.sendMessage(chatId, message);
+            setReminder({
+                number: date.getTime() / 1000,
+                frequency: 'once',
+                job: job,
+                isValid: isValid,
+            });
+
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
             bot.sendMessage(chatId, `Alright, I have set reminder for ${ReminderMemory.getReminder(chatId)}.`);
         }

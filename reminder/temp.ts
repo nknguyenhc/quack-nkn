@@ -1,5 +1,6 @@
-import { FrequencyType, Reminder } from "./db";
-import { formatDate, numberToTime } from '../utils/primitives';
+import { Reminder } from "./db";
+import { formatDate, getRandomString, numberToTime } from '../utils/primitives';
+import { FrequencyType } from "../utils/schedule";
 
 type ReminderTemp = {
     content?: string,
@@ -94,13 +95,20 @@ class ReminderMemory {
         return result;
     }
 
-    static async build(chatId: number): Promise<void> {
+    static getMessage(chatId: number): string {
+        return ReminderMemory.#reminders[chatId].content;
+    }
+
+    static async build(chatId: number): Promise<string> {
+        const id = getRandomString();
         await Reminder.create({
+            id: id,
             content: ReminderMemory.#reminders[chatId].content,
             frequency: ReminderMemory.#reminders[chatId].frequency,
             userChatId: chatId,
             time: ReminderMemory.#reminders[chatId].time,
         });
+        return id;
     }
 }
 

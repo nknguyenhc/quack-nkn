@@ -17,3 +17,5 @@ export type PollType = {
     question: string,
     options: InlineKeyboardButton[][],
 };
+
+export type StartBotJob = (bot: TelegramBot) => void;
