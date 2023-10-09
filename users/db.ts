@@ -8,13 +8,13 @@ dotenv.config();
 const sequelize = getConnection();
 
 type UserType = {
-    chatId: number,
+    chatId: string,
     username: string | undefined,
 }
 
 export const User = sequelize.define<Model<UserType>>('User', {
     chatId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         primaryKey: true,
     },
     username: {

@@ -1,5 +1,5 @@
 import TelegramBot, { Message } from 'node-telegram-bot-api';
-import { textUserHandlers } from './users/handlers';
+import { plainUserHandlers, textUserHandlers } from './users/handlers';
 import { textReminderHandlers, plainReminderHandlers, pollAnswerReminderHandlers } from './reminder/handlers';
 import reminderStartJob from './reminder/start';
 import dotenv from 'dotenv';
@@ -12,6 +12,10 @@ reminderStartJob(bot);
 
 textUserHandlers.forEach((handler) => {
     bot.onText(handler.command, handler.handler(bot));
+});
+
+plainUserHandlers.forEach((handler) => {
+    bot.on("message", handler.handler(bot));
 });
 
 textReminderHandlers.forEach((handler) => {

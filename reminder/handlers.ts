@@ -8,7 +8,7 @@ import { numberToTime, parseDateTime } from "../utils/primitives";
 import { FrequencyType, setReminder } from "../utils/schedule";
 
 const remindStartHandler: TextHandler = {
-    command: /\/reminder/,
+    command: /^\/reminder$/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
@@ -24,7 +24,7 @@ const remindStartHandler: TextHandler = {
 };
 
 const reminderAddHandler: TextHandler = {
-    command: /\/add/,
+    command: /^\/add$/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_START) {
@@ -36,15 +36,21 @@ const reminderAddHandler: TextHandler = {
 };
 
 const reminderListHandler: TextHandler = {
-    command: /\/list/,
+    command: /^\/list$/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_START) {
             const allReminders = await Reminder.findAll({
                 where: {
-                    userChatId: chatId,
+                    userChatId: String(chatId),
                 },
             });
+            if (allReminders.length === 0) {
+                bot.sendMessage(chatId, "You have no reminders yet.");
+                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                return;
+            }
+
             let message = 'Alright, here is your list of reminders:';
             allReminders.forEach((reminder, reminderIndex) => {
                 message += `\n${

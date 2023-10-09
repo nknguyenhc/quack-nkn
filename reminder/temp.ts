@@ -105,7 +105,7 @@ class ReminderMemory {
             id: id,
             content: ReminderMemory.#reminders[chatId].content,
             frequency: ReminderMemory.#reminders[chatId].frequency,
-            userChatId: chatId,
+            userChatId: String(chatId),
             time: ReminderMemory.#reminders[chatId].time,
         });
         return id;

@@ -11,7 +11,7 @@ type ReminderType = {
     id: string,
     content: string,
     frequency: FrequencyType,
-    userChatId: number,
+    userChatId: string,
     time: number,
 }
 
@@ -29,7 +29,7 @@ export const Reminder = sequelize.define<Model<ReminderType>>('Reminder', {
         allowNull: false,
     },
     userChatId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: false,
     },
     time: {

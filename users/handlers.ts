@@ -1,15 +1,15 @@
 import TelegramBot, { Message } from "node-telegram-bot-api";
 import { User } from './db';
-import { TextHandler } from '../utils/types';
-import UserStates from "../utils/states";
+import { PlainHandler, TextHandler } from '../utils/types';
+import UserStates, { knownCommands } from "../utils/states";
 
 const startHandler: TextHandler = {
-    command: /\/start/,
+    command: /^\/start$/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId: number = msg.chat.id;
         await User.findOrCreate({
             where: {
-                chatId: chatId,
+                chatId: String(chatId),
                 username: msg.chat.username,
             },
         });
@@ -25,7 +25,7 @@ const startHandler: TextHandler = {
 };
 
 const cancelHandler: TextHandler = {
-    command: /\/cancel/,
+    command: /^\/cancel$/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
 
@@ -43,9 +43,24 @@ const cancelHandler: TextHandler = {
         UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
         bot.sendMessage(chatId, "Operation cancelled.");
     }
-}
+};
+
+const errorHandler: PlainHandler = {
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        const stateInfo = knownCommands.get(UserStates.getUserState(chatId));
+        if (!stateInfo.commands.some(regex => msg.text.match(regex))
+                && (!stateInfo.allowPlain || msg.text.startsWith("/"))) {
+            bot.sendMessage(chatId, stateInfo.errorMessage);
+        }
+    }
+};
 
 export const textUserHandlers: Array<TextHandler> = [
     startHandler,
     cancelHandler,
+];
+
+export const plainUserHandlers: Array<PlainHandler> = [
+    errorHandler,
 ];
