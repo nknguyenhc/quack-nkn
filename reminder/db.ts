@@ -7,7 +7,7 @@ dotenv.config();
 
 const sequelize = getConnection();
 
-type ReminderType = {
+export type ReminderType = {
     id: string,
     content: string,
     frequency: FrequencyType,

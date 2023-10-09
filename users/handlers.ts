@@ -2,6 +2,7 @@ import TelegramBot, { Message } from "node-telegram-bot-api";
 import { User } from './db';
 import { PlainHandler, TextHandler } from '../utils/types';
 import UserStates, { knownCommands } from "../utils/states";
+import { ReminderEditMemory, ReminderMemory } from "../reminder/temp";
 
 const startHandler: TextHandler = {
     command: /^\/start$/,
@@ -41,6 +42,8 @@ const cancelHandler: TextHandler = {
 
         UserStates.setUserQuestionId(chatId, 0);
         UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+        ReminderMemory.deleteMemory(chatId);
+        ReminderEditMemory.deleteMemory(chatId);
         bot.sendMessage(chatId, "Operation cancelled.");
     }
 };
@@ -49,8 +52,8 @@ const errorHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         const stateInfo = knownCommands.get(UserStates.getUserState(chatId));
-        if (!stateInfo.commands.some(regex => msg.text.match(regex))
-                && (!stateInfo.allowPlain || msg.text.startsWith("/"))) {
+        if (!stateInfo.commands.some(regex => msg.text?.match(regex))
+                && (!stateInfo.allowPlain || msg.text?.startsWith("/"))) {
             bot.sendMessage(chatId, stateInfo.errorMessage);
         }
     }

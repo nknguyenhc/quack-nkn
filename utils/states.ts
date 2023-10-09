@@ -12,6 +12,12 @@ enum STATE {
     REMINDER_ONCE,
 
     REMINDER_EDIT,
+    REMINDER_EDIT_TYPE,
+    REMINDER_EDIT_CONTENT,
+    REMINDER_EDIT_FREQUENCY,
+    REMINDER_EDIT_DAILY,
+    REMINDER_EDIT_WEEKLY,
+    REMINDER_EDIT_ONCE,
 
     REMINDER_DELETE,
 }
@@ -75,6 +81,55 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         errorMessage: 'Invalid command, here is the current list of available commands for adding reminder:\n'
             + '/start - show start message\n'
             + '/cancel - cancel adding this reminder',
+        allowPlain: true,
+    }],
+    [STATE.REMINDER_EDIT, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing reminder:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing reminder',
+        allowPlain: true,
+    }],
+    [STATE.REMINDER_EDIT_TYPE, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing reminder:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing reminder',
+        allowPlain: false,
+    }],
+    [STATE.REMINDER_EDIT_CONTENT, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing reminder:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing reminder',
+        allowPlain: true,
+    }],
+    [STATE.REMINDER_EDIT_FREQUENCY, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing reminder:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing reminder',
+        allowPlain: false,
+    }],
+    [STATE.REMINDER_EDIT_DAILY, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing reminder:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing reminder',
+        allowPlain: false,
+    }],
+    [STATE.REMINDER_EDIT_WEEKLY, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing reminder:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing reminder',
+        allowPlain: false,
+    }],
+    [STATE.REMINDER_EDIT_ONCE, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing reminder:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing reminder',
         allowPlain: true,
     }],
 ])

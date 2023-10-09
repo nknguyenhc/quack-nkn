@@ -263,3 +263,24 @@ export const weeklyPoll: PollType = {
         ],
     ],
 };
+
+export const onceQuestion = 'When do you want me to remind you?\n'
+    + 'Please key in time in the following format: DD/MM/YYYY HH:MM';
+
+export const typePoll: PollType = {
+    question: "What do you want to edit?",
+    options: [
+        [{
+            text: "Content",
+            callback_data: "content",
+        }],
+        [{
+            text: "Frequency",
+            callback_data: "frequency",
+        }],
+        [{
+            text: "Time of reminder",
+            callback_data: "time",
+        }],
+    ],
+};

@@ -1,4 +1,4 @@
-import { Reminder } from "./db";
+import { Reminder, ReminderType } from "./db";
 import { formatDate, getRandomString, numberToTime } from '../utils/primitives';
 import { FrequencyType } from "../utils/schedule";
 
@@ -12,7 +12,7 @@ type Dict = {
     [key: number]: ReminderTemp,
 }
 
-class ReminderMemory {
+export class ReminderMemory {
     static #reminders: Dict = {};
 
     static setUser(chatId: number) {
@@ -32,6 +32,7 @@ class ReminderMemory {
     }
 
     static numberToTime(number: number, frequency: FrequencyType): string {
+        console.log("numberToTime", number, frequency);
         switch (frequency) {
             case 'daily':
                 return `everyday ${numberToTime(number)}`;
@@ -95,6 +96,10 @@ class ReminderMemory {
         return result;
     }
 
+    static deleteMemory(chatId: number) {
+        delete ReminderMemory.#reminders[chatId];
+    }
+
     static getMessage(chatId: number): string {
         return ReminderMemory.#reminders[chatId].content;
     }
@@ -112,4 +117,93 @@ class ReminderMemory {
     }
 }
 
-export default ReminderMemory;
+type EditTemp = {
+    reminders?: Array<string>,
+    index?: number,
+    content?: string,
+    frequency?: FrequencyType,
+    time?: number,
+}
+
+type EditDict = {
+    [key: number]: EditTemp,
+}
+
+export class ReminderEditMemory {
+    static #reminders: EditDict = {};
+
+    static setUser(chatId: number, reminders: Array<string>) {
+        ReminderEditMemory.#reminders[chatId] = {
+            reminders,
+        };
+    }
+
+    static setIndex(chatId: number, index: number): boolean {
+        if (isNaN(index) || index > ReminderEditMemory.#reminders[chatId].reminders.length || index <= 0) {
+            return false;
+        }
+        ReminderEditMemory.#reminders[chatId].index = index - 1;
+        return true;
+    }
+
+    static setContent(chatId: number, content: string) {
+        ReminderEditMemory.#reminders[chatId].content = content;
+    }
+
+    static setFrequency(chatId: number, frequency: FrequencyType) {
+        ReminderEditMemory.#reminders[chatId].frequency = frequency;
+    }
+
+    static setTime(chatId: number, time: number) {
+        ReminderEditMemory.#reminders[chatId].time = time;
+    }
+
+    static async autoSetFrequency(chatId: number) {
+        const { reminders, index } = ReminderEditMemory.#reminders[chatId];
+        const changedFrequency = ReminderEditMemory.#reminders[chatId].frequency;
+        if (!changedFrequency) {
+            const frequency = (await Reminder.findOne({
+                where: { id: reminders[index] },
+            })).dataValues.frequency;
+            ReminderEditMemory.#reminders[chatId].frequency = frequency;
+            return frequency;
+        }
+        return changedFrequency;
+    }
+
+    static async build(chatId: number): Promise<ReminderType> {
+        const { reminders, index, content, frequency, time } = ReminderEditMemory.#reminders[chatId];
+        const id = reminders[index];
+        const newId = getRandomString();
+        if (content) {
+            await Reminder.update({ content, id: newId }, {
+                where: { id: id },
+            });
+        } else {
+            await Reminder.update({ frequency, time, id: newId }, {
+                where: { id: id },
+            });
+        }
+        return (await Reminder.findOne({
+            where: { id: newId }
+        })).dataValues;
+    }
+
+    static getReminder(chatId: number): [string, string] {
+        const { content, frequency, time } = ReminderEditMemory.#reminders[chatId];
+        delete ReminderEditMemory.#reminders[chatId];
+        if (content) {
+            return ["content", "\"" + content + "\""];
+        }
+        if (frequency) {
+            return ["frequency", ReminderMemory.numberToTime(time, frequency)];
+        }
+        if (time) {
+            return ["time", ReminderMemory.numberToTime(time, frequency)];
+        }
+    }
+
+    static deleteMemory(chatId: number) {
+        delete ReminderEditMemory.#reminders[chatId];
+    }
+}
