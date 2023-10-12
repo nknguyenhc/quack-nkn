@@ -2,7 +2,7 @@ import TelegramBot, { Message } from "node-telegram-bot-api";
 import { User } from './db';
 import { PlainHandler, TextHandler } from '../utils/types';
 import UserStates, { knownCommands } from "../utils/states";
-import { ReminderEditMemory, ReminderMemory } from "../reminder/temp";
+import { ReminderDeleteMemory, ReminderEditMemory, ReminderMemory } from "../reminder/temp";
 
 const startHandler: TextHandler = {
     command: /^\/start$/,
@@ -44,6 +44,7 @@ const cancelHandler: TextHandler = {
         UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
         ReminderMemory.deleteMemory(chatId);
         ReminderEditMemory.deleteMemory(chatId);
+        ReminderDeleteMemory.deleteMemory(chatId);
         bot.sendMessage(chatId, "Operation cancelled.");
     }
 };

@@ -32,7 +32,6 @@ export class ReminderMemory {
     }
 
     static numberToTime(number: number, frequency: FrequencyType): string {
-        console.log("numberToTime", number, frequency);
         switch (frequency) {
             case 'daily':
                 return `everyday ${numberToTime(number)}`;
@@ -205,5 +204,40 @@ export class ReminderEditMemory {
 
     static deleteMemory(chatId: number) {
         delete ReminderEditMemory.#reminders[chatId];
+    }
+}
+
+type RemoveTemp = {
+    reminders: Array<string>,
+}
+
+type RemoveDict = {
+    [key: number]: RemoveTemp,
+}
+
+export class ReminderDeleteMemory {
+    static #reminders: RemoveDict = {};
+
+    static setUser(chatId: number, reminders: Array<string>) {
+        ReminderDeleteMemory.#reminders[chatId] = { reminders };
+    }
+
+    static async deleteReminder(chatId: number, index: number) {
+        const { reminders } = ReminderDeleteMemory.#reminders[chatId];
+        delete ReminderDeleteMemory.#reminders[chatId];
+        if (!isNaN(index) && index >= 0 && index < reminders.length) {
+            await Reminder.destroy({
+                where: {
+                    userChatId: String(chatId),
+                    id: reminders[index],
+                },
+            });
+            return true;
+        }
+        return false;
+    }
+
+    static deleteMemory(chatId: number) {
+        delete ReminderDeleteMemory.#reminders[chatId];
     }
 }

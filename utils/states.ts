@@ -132,6 +132,13 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
             + '/cancel - cancel editing reminder',
         allowPlain: true,
     }],
+    [STATE.REMINDER_DELETE, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for deleting reminder:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel deleting reminder',
+        allowPlain: true,
+    }],
 ])
 
 type Dict = {

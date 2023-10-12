@@ -1,5 +1,5 @@
 import TelegramBot, { CallbackQuery, Message } from "node-telegram-bot-api";
-import { ReminderEditMemory, ReminderMemory } from './temp';
+import { ReminderDeleteMemory, ReminderEditMemory, ReminderMemory } from './temp';
 import { TextHandler, PlainHandler, PollAnswerHandler } from '../utils/types';
 import UserStates from '../utils/states';
 import { Reminder, ReminderType } from "./db";
@@ -105,7 +105,17 @@ const reminderDeleteHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_START) {
-            bot.sendMessage(chatId, 'not implemented');
+            const reminders = (await Reminder.findAll({
+                where: { userChatId: String(chatId) },
+            }));
+            ReminderDeleteMemory.setUser(chatId, reminders.map(reminder => reminder.dataValues.id));
+            let message = 'Here is your list of reminders:';
+            reminders.forEach((reminder, reminderIndex) => {
+                message += `\n${reminderIndex + 1}. ${reminderDataToString(reminder)}`;
+            });
+            message += `\nWhich task do you want to delete? Key in the index of the task`;
+            bot.sendMessage(chatId, message);
+            UserStates.setUserState(chatId, UserStates.STATE.REMINDER_DELETE);
         }
     },
 };
@@ -564,6 +574,20 @@ const reminderEditOnceHandler: PlainHandler = {
     },
 };
 
+const reminderDeleteIndexHandler: PlainHandler = {
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_DELETE) {
+            const index = Number(msg.text);
+            const isDeleted = ReminderDeleteMemory.deleteReminder(chatId, index - 1);
+            if (isDeleted) {
+                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                bot.sendMessage(chatId, `Alright, reminder ${index} has been deleted`)
+            }
+        }
+    },
+};
+
 export const textReminderHandlers: Array<TextHandler> = [
     remindStartHandler,
     reminderAddHandler,
@@ -578,6 +602,7 @@ export const plainReminderHandlers: Array<PlainHandler> = [
     reminderEditIndexHandler,
     reminderEditContentHandler,
     reminderEditOnceHandler,
+    reminderDeleteIndexHandler,
 ];
 
 export const pollAnswerReminderHandlers: Array<PollAnswerHandler> = [
