@@ -49,6 +49,54 @@ const cancelHandler: TextHandler = {
     }
 };
 
+const addHandler: TextHandler = {
+    command: /^\/add$/,
+    handler: (bot: TelegramBot) => (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
+            UserStates.setUserState(chatId, UserStates.STATE.ADD);
+            bot.sendMessage(chatId, 'What do you wish to add?'
+                    + '\n/reminder - add a new reminder');
+        }
+    },
+};
+
+const listHandler: TextHandler = {
+    command: /^\/list$/,
+    handler: (bot: TelegramBot) => (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
+            UserStates.setUserState(chatId, UserStates.STATE.LIST);
+            bot.sendMessage(chatId, 'What do you wish to view?'
+                    + '\n/reminder - view your list of reminders');
+        }
+    },
+};
+
+const editHandler: TextHandler = {
+    command: /^\/edit$/,
+    handler: (bot: TelegramBot) => (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
+            UserStates.setUserState(chatId, UserStates.STATE.EDIT);
+            bot.sendMessage(chatId, 'What do you wish to edit?'
+                    + '\n/reminder - edit one of your reminders');
+        }
+    }
+}
+
+const deleteHandler: TextHandler = {
+    command: /^\/delete$/,
+    handler: (bot: TelegramBot) => (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
+            UserStates.setUserState(chatId, UserStates.STATE.DELETE);
+            bot.sendMessage(chatId, 'What do you wish to delete?'
+                    + '\n/reminder - delete one of your reminders');
+        }
+    }
+}
+
 const errorHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
@@ -63,6 +111,10 @@ const errorHandler: PlainHandler = {
 export const textUserHandlers: Array<TextHandler> = [
     startHandler,
     cancelHandler,
+    addHandler,
+    listHandler,
+    editHandler,
+    deleteHandler,
 ];
 
 export const plainUserHandlers: Array<PlainHandler> = [

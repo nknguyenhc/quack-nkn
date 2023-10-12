@@ -46,11 +46,50 @@ const reminderAddHandler: TextHandler = {
     },
 };
 
+const addReminderHandler: TextHandler = {
+    command: /^\/reminder$/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        console.log("reminder called", UserStates.getUserState(chatId), UserStates.STATE.ADD);
+        if (UserStates.getUserState(chatId) === UserStates.STATE.ADD) {
+            UserStates.setUserState(chatId, UserStates.STATE.REMINDER_ADD);
+            ReminderMemory.setUser(chatId);
+            bot.sendMessage(chatId, 'Alright, I am setting up a reminder for you. What do you want to remind yourself with?');
+        }
+    },
+};
+
 const reminderListHandler: TextHandler = {
     command: /^\/list$/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_START) {
+            const allReminders = await Reminder.findAll({
+                where: {
+                    userChatId: String(chatId),
+                },
+            });
+            if (allReminders.length === 0) {
+                bot.sendMessage(chatId, "You have no reminders yet.");
+                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                return;
+            }
+
+            let message = 'Alright, here is your list of reminders:';
+            allReminders.forEach((reminder, reminderIndex) => {
+                message += `\n${reminderIndex + 1}. ${reminderDataToString(reminder)}`;
+            });
+            bot.sendMessage(chatId, message);
+            UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+        }
+    },
+};
+
+const listReminderHandler: TextHandler = {
+    command: /^\/reminder$/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.LIST) {
             const allReminders = await Reminder.findAll({
                 where: {
                     userChatId: String(chatId),
@@ -100,11 +139,59 @@ const reminderEditHandler: TextHandler = {
     },
 };
 
+const editReminderHandler: TextHandler = {
+    command: /^\/reminder$/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.EDIT) {
+            const allReminders = await Reminder.findAll({
+                where: {
+                    userChatId: String(chatId),
+                },
+            });
+            if (allReminders.length === 0) {
+                bot.sendMessage(chatId, "You have no reminders to edit yet.");
+                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                return;
+            }
+
+            ReminderEditMemory.setUser(chatId, allReminders.map(reminder => reminder.dataValues.id));
+            let message = 'Here is your list of reminders:';
+            allReminders.forEach((reminder, reminderIndex) => {
+                message += `\n${reminderIndex + 1}. ${reminderDataToString(reminder)}`;
+            });
+            message += '\nWhich task do you want to edit? Key in the index of the task';
+            bot.sendMessage(chatId, message);
+            UserStates.setUserState(chatId, UserStates.STATE.REMINDER_EDIT);
+        }
+    },
+};
+
 const reminderDeleteHandler: TextHandler = {
     command: /^\/delete$/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_START) {
+            const reminders = (await Reminder.findAll({
+                where: { userChatId: String(chatId) },
+            }));
+            ReminderDeleteMemory.setUser(chatId, reminders.map(reminder => reminder.dataValues.id));
+            let message = 'Here is your list of reminders:';
+            reminders.forEach((reminder, reminderIndex) => {
+                message += `\n${reminderIndex + 1}. ${reminderDataToString(reminder)}`;
+            });
+            message += `\nWhich task do you want to delete? Key in the index of the task`;
+            bot.sendMessage(chatId, message);
+            UserStates.setUserState(chatId, UserStates.STATE.REMINDER_DELETE);
+        }
+    },
+};
+
+const deleteReminderHandler: TextHandler = {
+    command: /^\/reminder$/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.DELETE) {
             const reminders = (await Reminder.findAll({
                 where: { userChatId: String(chatId) },
             }));
@@ -591,9 +678,13 @@ const reminderDeleteIndexHandler: PlainHandler = {
 export const textReminderHandlers: Array<TextHandler> = [
     remindStartHandler,
     reminderAddHandler,
+    addReminderHandler,
     reminderListHandler,
+    listReminderHandler,
     reminderEditHandler,
+    editReminderHandler,
     reminderDeleteHandler,
+    deleteReminderHandler,
 ];
 
 export const plainReminderHandlers: Array<PlainHandler> = [

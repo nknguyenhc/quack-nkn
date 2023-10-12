@@ -1,6 +1,10 @@
 enum STATE {
     // normal
     NORMAL,
+    ADD,
+    LIST,
+    EDIT,
+    DELETE,
 
     // reminder
     REMINDER_START,
@@ -30,11 +34,47 @@ type KnownCommandHelper = {
 
 export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, KnownCommandHelper>([
     [STATE.NORMAL, {
-        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/],
+        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/, /^\/add$/, /^\/list$/, /^\/edit$/, /^\/delete$/],
         errorMessage: 'Invalid command, here is the current list of available commands:\n'
             + '/start - show start message\n'
             + '/cancel - cancel any operation at any time\n'
-            + '/reminder - add, view, edit or delete your reminders',
+            + '/reminder - add, view, edit or delete your reminders\n'
+            + '/add - add a new reminder or a website tracker\n'
+            + '/list - view your list of reminders or website trackers\n'
+            + '/edit - edit one of your reminders or website trackers\n'
+            + '/delete - delete one of your reminders or website trackers\n',
+        allowPlain: false,
+    }],
+    [STATE.ADD, {
+        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/],
+        errorMessage: 'Invalid command, here is what you can choose to add:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel adding\n'
+            + '/reminder - add a reminder\n',
+        allowPlain: false,
+    }],
+    [STATE.LIST, {
+        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/],
+        errorMessage: 'Invalid command, here is what you can choose to view:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel viewing\n'
+            + '/reminder - view your reminders\n',
+        allowPlain: false,
+    }],
+    [STATE.EDIT, {
+        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/],
+        errorMessage: 'Invalid command, here is what you can choose to edit:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel adding\n'
+            + '/reminder - edit a reminder\n',
+        allowPlain: false,
+    }],
+    [STATE.DELETE, {
+        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/],
+        errorMessage: 'Invalid command, here is what you can choose to delete:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel adding\n'
+            + '/reminder - delete a reminder\n',
         allowPlain: false,
     }],
     [STATE.REMINDER_START, {
