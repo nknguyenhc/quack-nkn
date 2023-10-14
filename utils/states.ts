@@ -24,6 +24,11 @@ enum STATE {
     REMINDER_EDIT_ONCE,
 
     REMINDER_DELETE,
+
+    // tracker
+    TRACK_START,
+
+    TRACK_ADD,
 }
 
 type KnownCommandHelper = {
@@ -34,11 +39,12 @@ type KnownCommandHelper = {
 
 export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, KnownCommandHelper>([
     [STATE.NORMAL, {
-        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/, /^\/add$/, /^\/list$/, /^\/edit$/, /^\/delete$/],
+        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/, /^\/track$/, /^\/add$/, /^\/list$/, /^\/edit$/, /^\/delete$/],
         errorMessage: 'Invalid command, here is the current list of available commands:\n'
             + '/start - show start message\n'
             + '/cancel - cancel any operation at any time\n'
             + '/reminder - add, view, edit or delete your reminders\n'
+            + '/track - add, view, edit or delete your website trackers\n'
             + '/add - add a new reminder or a website tracker\n'
             + '/list - view your list of reminders or website trackers\n'
             + '/edit - edit one of your reminders or website trackers\n'
@@ -177,6 +183,24 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         errorMessage: 'Invalid command, here is the current list of available commands for deleting reminder:\n'
             + '/start - show start message\n'
             + '/cancel - cancel deleting reminder',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_START, {
+        commands: [/^\/start$/, /^\/cancel$/, /^\/add$/, /^\/list$/, /^\/edit$/, /^\/delete$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for tracking:\n'
+            + '/start - show start message\n'
+            + '/cancel - exit from tracking\n'
+            + '/add - add a new website tracker\n'
+            + '/list - view your list of website trackers\n'
+            + '/edit - edit a website tracker\n'
+            + '/delete - delete a website tracker',
+        allowPlain: false,
+    }],
+    [STATE.TRACK_ADD, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for adding a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel adding a website tracker',
         allowPlain: true,
     }],
 ])

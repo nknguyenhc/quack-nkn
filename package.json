@@ -17,6 +17,7 @@
     "node-schedule": "^2.1.1",
     "node-telegram-bot-api": "^0.63.0",
     "pg": "^8.11.3",
+    "puppeteer": "^21.3.8",
     "sequelize": "^6.33.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
