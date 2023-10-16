@@ -31,6 +31,12 @@ enum STATE {
     TRACK_ADD,
     TRACK_CONFIRM,
     TRACK_SELECTOR,
+    TRACK_SELECTOR_CONFIRM,
+    TRACK_CAPTION,
+    TRACK_FREQUENCY,
+    TRACK_DAILY,
+    TRACK_WEEKLY,
+    TRACK_ONCE,
 }
 
 type KnownCommandHelper = {
@@ -219,6 +225,48 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
             + '/cancel - cancel adding a website tracker',
         allowPlain: true,
     }],
+    [STATE.TRACK_SELECTOR_CONFIRM, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for adding a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel adding a website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_CAPTION, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for adding a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel adding a website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_FREQUENCY, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for adding a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel adding a website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_DAILY, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for adding a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel adding a website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_WEEKLY, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for adding a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel adding a website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_ONCE, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for adding a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel adding a website tracker',
+        allowPlain: true,
+    }],
 ])
 
 type Dict = {
@@ -250,7 +298,7 @@ class UserStates {
         };
     }
 
-    static getUserQuestionId(chatId: number): number {
+    static getUserQuestionId(chatId: number): number | undefined {
         if (!(chatId in UserStates.#states)) {
             return undefined;
         }

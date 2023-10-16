@@ -1,11 +1,14 @@
-import TelegramBot, { Message } from 'node-telegram-bot-api';
-import { PlainHandler, TextHandler } from '../utils/types';
+import TelegramBot, { CallbackQuery, Message } from 'node-telegram-bot-api';
+import { PlainHandler, PollAnswerHandler, TextHandler } from '../utils/types';
 import UserStates from '../utils/states';
 import { launch } from 'puppeteer';
 import { getRandomString } from '../utils/primitives';
 import { unlink } from 'fs';
-import { frequencyPoll } from './data';
+import { confirmErrorMessage, dailyPoll, frequencyPoll, onceQuestion, weeklyPoll } from './data';
 import { TrackMemory } from './temp';
+import { FrequencyType } from '../utils/schedule';
+
+const mainBrowser = launch();
 
 const trackHandler: TextHandler = {
     command: /^\/track$/,
@@ -40,12 +43,12 @@ const trackAddressHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_ADD) {
-            const link = msg.text;
+            const link = msg.text!;
             bot.sendMessage(chatId, "Alright, give me a second.");
             TrackMemory.addUser(chatId);
             TrackMemory.setLink(chatId, link);
 
-            const browser = await launch();
+            const browser = await mainBrowser;
             const page = await browser.newPage();
             page.setViewport({
                 width: 1440,
@@ -63,7 +66,7 @@ const trackAddressHandler: PlainHandler = {
             await page.screenshot({
                 path: './media/' + filename + '.jpg',
             });
-            browser.close();
+            page.close();
 
             bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
                 caption: "Is this the site that you want to track?",
@@ -83,7 +86,7 @@ const trackConfirmHandler: PlainHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_CONFIRM) {
-            const reply = msg.text.toLowerCase().trim();
+            const reply = msg.text!.toLowerCase().trim();
             if (reply === 'yes' || reply === 'y') {
                 setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR), 100);
                 bot.sendMessage(chatId, "Alright, do you wish to scroll down to a particular section?\n"
@@ -98,7 +101,7 @@ const trackConfirmHandler: PlainHandler = {
                 bot.sendMessage(chatId, "Cancelled adding the website tracker. "
                         + "If you believe the above was a bug, please contact my boss at nknguyenhc@gmail.com");
             } else {
-                bot.sendMessage(chatId, "Please confirm with either \"yes\" or \"no\"");
+                bot.sendMessage(chatId, confirmErrorMessage);
             }
         }
     }
@@ -108,11 +111,11 @@ const trackSelectorHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_SELECTOR) {
-            const selector = msg.text;
+            const selector = msg.text!;
             bot.sendMessage(chatId, "Alright, give me a second.");
             
             const link = TrackMemory.getLink(chatId);
-            const browser = await launch();
+            const browser = await mainBrowser;
             const page = await browser.newPage();
             page.setViewport({
                 width: 1440,
@@ -120,7 +123,6 @@ const trackSelectorHandler: PlainHandler = {
             });
             await page.goto(link);
             const elements = await page.$$(selector);
-            console.log(elements);
 
             if (elements.length > 0) {
                 await page.evaluate((element) => {
@@ -130,6 +132,8 @@ const trackSelectorHandler: PlainHandler = {
                 await page.screenshot({
                     path: './media/' + filename + '.jpg',
                 });
+                TrackMemory.setSelector(chatId, selector);
+                setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR_CONFIRM), 100);
                 bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
                     caption: "Is this the section you want to track?",
                 }).then(() => {
@@ -139,11 +143,99 @@ const trackSelectorHandler: PlainHandler = {
                         }
                     });
                 });
+            } else {
+                bot.sendMessage(chatId, "I did not manage to find any HTML element with your selector. "
+                        + "Please send me the correct selector.");
             }
 
-            browser.close();
+            page.close();
         }
-    }
+    },
+};
+
+const trackSelectorConfirmHandler: PlainHandler = {
+    handler: (bot: TelegramBot) => (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_SELECTOR_CONFIRM) {
+            const reply = msg.text!.toLowerCase().trim();
+            if (reply === 'yes' || reply === 'y') {
+                setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_CAPTION), 100);
+                bot.sendMessage(chatId, 'What caption do you wish to put for your tracker?');
+            } else if (reply === 'no' || reply === 'n') {
+                setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR), 100);
+                bot.sendMessage(chatId, "Alright, can you give me the correct query selector?");
+            } else {
+                bot.sendMessage(chatId, confirmErrorMessage);
+            }
+        }
+    },
+};
+
+const trackCaptionHandler: PlainHandler = {
+    handler: (bot: TelegramBot) => (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_CAPTION) {
+            const caption = msg.text!;
+            TrackMemory.setCaption(chatId, caption);
+            UserStates.setUserState(chatId, UserStates.STATE.TRACK_FREQUENCY);
+            bot.sendMessage(chatId, frequencyPoll.question, {
+                reply_markup: {
+                    inline_keyboard: frequencyPoll.options,
+                },
+            }).then(msg => {
+                UserStates.setUserQuestionId(chatId, msg.message_id);
+            });
+        }
+    },
+};
+
+const trackFrequencyHandler: PollAnswerHandler = {
+    handler: (bot: TelegramBot) => (query: CallbackQuery) => {
+        const chatId = query.message!.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_FREQUENCY
+                && query.message!.text === frequencyPoll.question) {
+            const messageId = query.message!.message_id;
+            const selectedOption: FrequencyType = query.data as FrequencyType;
+            TrackMemory.setFrequency(chatId, selectedOption);
+
+            bot.editMessageText(
+                `Alright, I will send you screenshots ${selectedOption}`,
+                {
+                    chat_id: chatId,
+                    message_id: messageId,
+                },
+            );
+
+            switch (selectedOption) {
+                case 'daily':
+                    UserStates.setUserState(chatId, UserStates.STATE.TRACK_DAILY);
+                    bot.sendMessage(chatId, dailyPoll.question, {
+                        reply_markup: {
+                            inline_keyboard: dailyPoll.options,
+                        },
+                    }).then(msg => {
+                        UserStates.setUserQuestionId(chatId, msg.message_id);
+                    });
+                    break;
+                case 'weekly':
+                    UserStates.setUserState(chatId, UserStates.STATE.TRACK_WEEKLY);
+                    bot.sendMessage(chatId, weeklyPoll.question, {
+                        reply_markup: {
+                            inline_keyboard: weeklyPoll.options,
+                        },
+                    }).then(msg => {
+                        UserStates.setUserQuestionId(chatId, msg.message_id);
+                    });
+                    break;
+                case 'once':
+                    UserStates.setUserState(chatId, UserStates.STATE.TRACK_ONCE);
+                    bot.sendMessage(chatId, onceQuestion).then(msg => {
+                        UserStates.setUserQuestionId(chatId, msg.message_id);
+                    });
+                    break;
+            }
+        }
+    },
 };
 
 export const trackTextHandlers: Array<TextHandler> = [
@@ -155,4 +247,10 @@ export const trackPlainHandler: Array<PlainHandler> = [
     trackAddressHandler,
     trackConfirmHandler,
     trackSelectorHandler,
+    trackSelectorConfirmHandler,
+    trackCaptionHandler,
+];
+
+export const trackPollHandler: Array<PollAnswerHandler> = [
+    trackFrequencyHandler,
 ];

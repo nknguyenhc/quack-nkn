@@ -2,7 +2,7 @@ import TelegramBot, { Message } from 'node-telegram-bot-api';
 import { plainUserHandlers, textUserHandlers } from './users/handlers';
 import { textReminderHandlers, plainReminderHandlers, pollAnswerReminderHandlers } from './reminder/handlers';
 import reminderStartJob from './reminder/start';
-import { trackPlainHandler, trackTextHandlers } from './tracker/handlers';
+import { trackPlainHandler, trackPollHandler, trackTextHandlers } from './tracker/handlers';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -47,4 +47,8 @@ trackPlainHandler.forEach((handler) => {
         }
         handler.handler(bot)(msg);
     });
-})
+});
+
+trackPollHandler.forEach((handler) => {
+    bot.on('callback_query', handler.handler(bot));
+});

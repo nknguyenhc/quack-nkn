@@ -211,7 +211,7 @@ const reminderSetContentHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_ADD) {
-            ReminderMemory.setContent(chatId, msg.text);
+            ReminderMemory.setContent(chatId, msg.text!);
             UserStates.setUserState(chatId, UserStates.STATE.REMINDER_FREQUENCY);
             bot.sendMessage(chatId, frequencyPoll.question, {
                 reply_markup: {
@@ -226,10 +226,10 @@ const reminderSetContentHandler: PlainHandler = {
 
 const reminderFrequencyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
-        const chatId: number = query.message.chat.id;
+        const chatId: number = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_FREQUENCY
-                && query.message.text === frequencyPoll.question) {
-            const messageId: number = query.message.message_id;
+                && query.message!.text === frequencyPoll.question) {
+            const messageId: number = query.message!.message_id;
             const selectedOption: FrequencyType = query.data as FrequencyType;
             ReminderMemory.setFrequency(chatId, selectedOption);
 
@@ -275,10 +275,10 @@ const reminderFrequencyHandler: PollAnswerHandler = {
 
 const reminderDailyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
-        const chatId = query.message.chat.id;
+        const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_DAILY
-                && query.message.text === dailyPoll.question) {
-            const messageId: number = query.message.message_id;
+                && query.message!.text === dailyPoll.question) {
+            const messageId: number = query.message!.message_id;
             const selectedOption = Number(query.data);
             ReminderMemory.setTime(chatId, selectedOption);
 
@@ -313,10 +313,10 @@ const reminderDailyHandler: PollAnswerHandler = {
 
 const reminderWeeklyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
-        const chatId = query.message.chat.id;
+        const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_WEEKLY
-                && query.message.text === weeklyPoll.question) {
-            const messageId: number = query.message.message_id;
+                && query.message!.text === weeklyPoll.question) {
+            const messageId: number = query.message!.message_id;
             const selectedOption = Number(query.data);
             ReminderMemory.setTime(chatId, selectedOption);
 
@@ -353,7 +353,7 @@ const reminderOnceHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_ONCE) {
-            const date: Date | undefined = parseDateTime(msg.text);
+            const date: Date | undefined = parseDateTime(msg.text!);
             if (!date || isNaN(date.getTime())) {
                 bot.sendMessage(chatId, "Oops, I do not understand your datetime.");
                 return;
@@ -414,10 +414,10 @@ const reminderEditIndexHandler: PlainHandler = {
 
 const reminderTypeHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
-        const chatId = query.message.chat.id;
+        const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_TYPE
-                && query.message.text === typePoll.question) {
-            const messageId = query.message.message_id;
+                && query.message!.text === typePoll.question) {
+            const messageId = query.message!.message_id;
             const selectedOption = query.data;
             bot.editMessageText(
                 `You choose: ${selectedOption}`,
@@ -480,7 +480,7 @@ const reminderEditContentHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_CONTENT) {
-            const newContent = msg.text;
+            const newContent = msg.text!;
             ReminderEditMemory.setContent(chatId, newContent);
 
             const { id, content, frequency, time } = await ReminderEditMemory.build(chatId);
@@ -504,10 +504,10 @@ const reminderEditContentHandler: PlainHandler = {
 
 const reminderEditFrequencyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
-        const chatId = query.message.chat.id;
+        const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_FREQUENCY
-                && query.message.text === frequencyPoll.question) {
-            const messageId = query.message.message_id;
+                && query.message!.text === frequencyPoll.question) {
+            const messageId = query.message!.message_id;
             const selectedOption: FrequencyType = query.data as FrequencyType;
             ReminderEditMemory.setFrequency(chatId, selectedOption);
 
@@ -553,10 +553,10 @@ const reminderEditFrequencyHandler: PollAnswerHandler = {
 
 const reminderEditDailyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
-        const chatId = query.message.chat.id;
+        const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_DAILY
-                && query.message.text === dailyPoll.question) {
-            const messageId = query.message.message_id;
+                && query.message!.text === dailyPoll.question) {
+            const messageId = query.message!.message_id;
             const selectedOption = Number(query.data);
             ReminderEditMemory.setTime(chatId, selectedOption);
 
@@ -589,10 +589,10 @@ const reminderEditDailyHandler: PollAnswerHandler = {
 
 const reminderEditWeeklyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
-        const chatId = query.message.chat.id;
+        const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_WEEKLY
-                && query.message.text === weeklyPoll.question) {
-            const messageId = query.message.message_id;
+                && query.message!.text === weeklyPoll.question) {
+            const messageId = query.message!.message_id;
             const selectedOption = Number(query.data);
             ReminderEditMemory.setTime(chatId, selectedOption);
 
@@ -627,7 +627,7 @@ const reminderEditOnceHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_ONCE) {
-            const date = parseDateTime(msg.text);
+            const date = parseDateTime(msg.text!);
             if (!date || isNaN(date.getTime())) {
                 bot.sendMessage(chatId, "Oops, I do not understand your datetime.");
                 return;
@@ -667,7 +667,7 @@ const reminderDeleteIndexHandler: PlainHandler = {
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_DELETE) {
             const index = Number(msg.text);
             const isDeleted = ReminderDeleteMemory.deleteReminder(chatId, index - 1);
-            if (isDeleted) {
+            if (await isDeleted) {
                 UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
                 bot.sendMessage(chatId, `Alright, reminder ${index} has been deleted`)
             }

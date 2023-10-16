@@ -101,7 +101,7 @@ const deleteHandler: TextHandler = {
 const errorHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
-        const stateInfo = knownCommands.get(UserStates.getUserState(chatId));
+        const stateInfo = knownCommands.get(UserStates.getUserState(chatId))!;
         if (!stateInfo.commands.some(regex => msg.text?.match(regex))
                 && (!stateInfo.allowPlain || msg.text?.startsWith("/"))) {
             bot.sendMessage(chatId, stateInfo.errorMessage);

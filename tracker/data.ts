@@ -1,7 +1,7 @@
 import { PollType } from "../utils/types";
 
 export const frequencyPoll: PollType = {
-    question: 'How frequently do you want me to track the website?',
+    question: 'How frequently do you want me to send you screenshots of the website?',
     options: [
         [{
             text: 'Daily',
@@ -11,11 +11,15 @@ export const frequencyPoll: PollType = {
             text: 'Weekly',
             callback_data: 'weekly',
         }],
+        [{
+            text: 'Once',
+            callback_data: 'once',
+        }],
     ],
 };
 
 export const dailyPoll: PollType = {
-    question: "When in the day do you want me to remind you?",
+    question: "When in the day do you want me to send you a screenshot?",
     options: [
         [
             {
@@ -129,7 +133,7 @@ export const dailyPoll: PollType = {
 };
 
 export const weeklyPoll: PollType = {
-    question: "Which day do you want me to remind you every week?",
+    question: "Which day do you want me to send you screenshot?",
     options: [
         [
             {
@@ -259,3 +263,8 @@ export const weeklyPoll: PollType = {
         ],
     ],
 };
+
+export const onceQuestion = 'When do you want me to send you screenshot?\n'
+    + 'Please key in time in the following format: DD/MM/YYYY HH:MM';
+
+export const confirmErrorMessage = "Please confirm with either \"yes\" or \"no\"";
