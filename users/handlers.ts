@@ -21,8 +21,8 @@ const startHandler: TextHandler = {
             + 'Here is the list of available commands:\n'
             + '/start - show this message\n'
             + '/reminder - add, view, edit or delete your reminders\n'
-            + '/cancel - at anytime when you wish to cancel what you are doing, you may use this command\n'
-            + '/track - add, view, edit or delete your website trackers');
+            + '/track - add, view, edit or delete your website trackers\n'
+            + '/cancel - at anytime when you wish to cancel what you are doing, you may use this command');
     }
 };
 
