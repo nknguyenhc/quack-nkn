@@ -31,6 +31,7 @@ enum STATE {
     TRACK_ADD,
     TRACK_CONFIRM,
     TRACK_SELECTOR,
+    TRACK_INDEX,
     TRACK_SELECTOR_CONFIRM,
     TRACK_CAPTION,
     TRACK_FREQUENCY,
@@ -219,6 +220,13 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         allowPlain: true,
     }],
     [STATE.TRACK_SELECTOR, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for adding a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel adding a website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_INDEX, {
         commands: [/^\/start$/, /^\/cancel$/],
         errorMessage: 'Invalid command, here is the current list of available commands for adding a website tracker:\n'
             + '/start - show start message\n'

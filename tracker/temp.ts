@@ -5,6 +5,8 @@ type TrackType = {
     link?: string,
     selector?: string,
     caption?: string,
+    selectorCount?: number,
+    index?: number,
     frequency?: FrequencyType,
     time?: number,
 }
@@ -30,6 +32,22 @@ export class TrackMemory {
 
     static setSelector(chatId: number, selector: string) {
         TrackMemory.#tracks[chatId].selector = selector;
+    }
+
+    static getSelector(chatId: number): string {
+        return TrackMemory.#tracks[chatId].selector!;
+    }
+
+    static setSelectorCount(chatId: number, selectorCount: number) {
+        TrackMemory.#tracks[chatId].selectorCount = selectorCount;
+    }
+
+    static getSelectorCount(chatId: number): number {
+        return TrackMemory.#tracks[chatId].selectorCount!;
+    }
+
+    static setIndex(chatId: number, index: number) {
+        TrackMemory.#tracks[chatId].index = index;
     }
 
     static setCaption(chatId: number, caption: string) {

@@ -113,6 +113,13 @@ const trackSelectorHandler: PlainHandler = {
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_SELECTOR) {
             const selector = msg.text!;
             bot.sendMessage(chatId, "Alright, give me a second.");
+
+            if (selector === 'top') {
+                setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_CAPTION), 100);
+                bot.sendMessage(chatId, "Ok, I will track the website at the top.\n"
+                        + "What caption do you wish to put for your tracker?");
+                return;
+            }
             
             const link = TrackMemory.getLink(chatId);
             const browser = await mainBrowser;
@@ -124,7 +131,7 @@ const trackSelectorHandler: PlainHandler = {
             await page.goto(link);
             const elements = await page.$$(selector);
 
-            if (elements.length > 0) {
+            if (elements.length === 1) {
                 await page.evaluate((element) => {
                     element.scrollIntoView();
                 }, elements[0]);
@@ -143,12 +150,76 @@ const trackSelectorHandler: PlainHandler = {
                         }
                     });
                 });
+            } else if (elements.length > 1) {
+                TrackMemory.setSelector(chatId, selector);
+                TrackMemory.setSelectorCount(chatId, elements.length);
+                UserStates.setUserState(chatId, UserStates.STATE.TRACK_INDEX);
+                bot.sendMessage(chatId, "Looks like there are many HTML elements matching your query. "
+                        + "What is the index of the element? You can obtain the index of the element "
+                        + `by running \`document.querySelectorAll(${selector})\` in browser `
+                        + "and obtain the index of the item in the result list. "
+                        + "Please give me zero-based index.", {
+                            parse_mode: "Markdown",
+                        });
             } else {
                 bot.sendMessage(chatId, "I did not manage to find any HTML element with your selector. "
                         + "Please send me the correct selector.");
             }
 
             page.close();
+        }
+    },
+};
+
+const trackSelectorIndexHandler: PlainHandler = {
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_INDEX) {
+            const index = Number(msg.text);
+            const range = TrackMemory.getSelectorCount(chatId);
+            if (isNaN(index) || index >= range || index < 0) {
+                bot.sendMessage(chatId, `Invalid index, index should be between 0 and ${range - 1} inclusive.`);
+                return;
+            }
+
+            TrackMemory.setIndex(chatId, index);
+            const selector = TrackMemory.getSelector(chatId);
+            const link = TrackMemory.getLink(chatId);
+            const browser = await mainBrowser;
+            const page = await browser.newPage();
+            page.setViewport({
+                width: 1440,
+                height: 715,
+            });
+            await page.goto(link);
+            const elements = await page.$$(selector);
+
+            if (elements.length < index) {
+                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                TrackMemory.deleteUser(chatId);
+                bot.sendMessage(chatId, "Oops, the page appears to have changed as we are talking. "
+                        + "Please start over again.");
+                return;
+            }
+
+            await page.evaluate((element) => {
+                element.scrollIntoView();
+            }, elements[index]);
+            const filename = getRandomString();
+            await page.screenshot({
+                path: './media/' + filename + '.jpg',
+            });
+
+            setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR_CONFIRM), 100);
+            bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
+                caption: "Is this the section you want to track?",
+            }).then(() => {
+                unlink('media/' + filename + '.jpg', (err) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                });
+            });
         }
     },
 };
@@ -330,6 +401,7 @@ export const trackPlainHandler: Array<PlainHandler> = [
     trackAddressHandler,
     trackConfirmHandler,
     trackSelectorHandler,
+    trackSelectorIndexHandler,
     trackSelectorConfirmHandler,
     trackCaptionHandler,
     trackOnceHandler,
