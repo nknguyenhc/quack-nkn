@@ -7,6 +7,7 @@ type TrackType = {
     caption?: string,
     selectorCount?: number,
     index?: number,
+    pixelCount?: number,
     frequency?: FrequencyType,
     time?: number,
 }
@@ -44,6 +45,10 @@ export class TrackMemory {
 
     static getSelectorCount(chatId: number): number {
         return TrackMemory.#tracks[chatId].selectorCount!;
+    }
+
+    static setPixelCount(chatId: number, pixelCount: number) {
+        TrackMemory.#tracks[chatId].pixelCount = pixelCount;
     }
 
     static setIndex(chatId: number, index: number) {

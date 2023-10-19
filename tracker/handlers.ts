@@ -1,7 +1,7 @@
 import TelegramBot, { CallbackQuery, Message } from 'node-telegram-bot-api';
 import { PlainHandler, PollAnswerHandler, TextHandler } from '../utils/types';
 import UserStates from '../utils/states';
-import { launch } from 'puppeteer';
+import { launch, ElementHandle, NodeFor } from 'puppeteer';
 import { getRandomString, numberToTime, parseDateTime, weeklyNumberToString } from '../utils/primitives';
 import { unlink } from 'fs';
 import { confirmErrorMessage, dailyPoll, frequencyPoll, onceQuestion, weeklyPoll } from './data';
@@ -90,7 +90,8 @@ const trackConfirmHandler: PlainHandler = {
             if (reply === 'yes' || reply === 'y') {
                 setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR), 100);
                 bot.sendMessage(chatId, "Alright, do you wish to scroll down to a particular section?\n"
-                        + "If you do not need me to scroll down, simply type \"top\"\n"
+                        + "If you do not need me to scroll down, simply type \"top\".\n"
+                        + "If you wish me to scroll down by a fixed number of pixels, give me the number of pixels.\n"
                         + "Otherwise, give me the query selector such that when I run `document.querySelectorAll(yourQuerySelector)`, "
                         + "the HTML element should be in the result list.", {
                             parse_mode: "Markdown",
@@ -129,12 +130,35 @@ const trackSelectorHandler: PlainHandler = {
                 height: 715,
             });
             await page.goto(link);
+
+            const tryNumber = Number(selector);
+            if (!isNaN(tryNumber)) {
+                await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
+                const filename = getRandomString();
+                await page.screenshot({
+                    path: './media/' + filename + '.jpg',
+                });
+                TrackMemory.setPixelCount(chatId, tryNumber);
+                setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR_CONFIRM), 100);
+                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
+                    caption: "Is this the section you want to track?",
+                }).then(() => {
+                    unlink('media/' + filename + ".jpg", (err) => {
+                        if (err) {
+                            console.log(err);
+                        }
+                    });
+                });
+                return;
+            }
+
             const elements = await page.$$(selector);
 
             if (elements.length === 1) {
-                await page.evaluate((element) => {
+                await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
                     element.scrollIntoView();
                 }, elements[0]);
+                await page.evaluate('window.scrollBy(0, -150)');
                 const filename = getRandomString();
                 await page.screenshot({
                     path: './media/' + filename + '.jpg',
@@ -163,7 +187,7 @@ const trackSelectorHandler: PlainHandler = {
                         });
             } else {
                 bot.sendMessage(chatId, "I did not manage to find any HTML element with your selector. "
-                        + "Please send me the correct selector.");
+                        + "Please send me the correct selector, or the number of pixels to scroll down.");
             }
 
             page.close();
@@ -202,9 +226,10 @@ const trackSelectorIndexHandler: PlainHandler = {
                 return;
             }
 
-            await page.evaluate((element) => {
+            await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
                 element.scrollIntoView();
             }, elements[index]);
+            await page.evaluate('window.scrollBy(0, -150)');
             const filename = getRandomString();
             await page.screenshot({
                 path: './media/' + filename + '.jpg',
@@ -234,7 +259,7 @@ const trackSelectorConfirmHandler: PlainHandler = {
                 bot.sendMessage(chatId, 'What caption do you wish to put for your tracker?');
             } else if (reply === 'no' || reply === 'n') {
                 setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR), 100);
-                bot.sendMessage(chatId, "Alright, can you give me the correct query selector?");
+                bot.sendMessage(chatId, "Alright, can you give me the correct query selector, or the correct number of pixels to scroll down?");
             } else {
                 bot.sendMessage(chatId, confirmErrorMessage);
             }
