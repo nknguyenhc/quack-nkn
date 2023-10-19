@@ -4,7 +4,7 @@ import { TextHandler, PlainHandler, PollAnswerHandler } from '../utils/types';
 import UserStates from '../utils/states';
 import { Reminder, ReminderType } from "./db";
 import { dailyPoll, frequencyPoll, onceQuestion, typePoll, weeklyPoll } from './data';
-import { numberToTime, parseDateTime } from "../utils/primitives";
+import { numberToTime, numberToTimeString, parseDateTime, weeklyNumberToString } from "../utils/primitives";
 import { FrequencyType, setReminder } from "../utils/schedule";
 import { Model } from "sequelize";
 
@@ -14,7 +14,7 @@ const reminderDataToString = (reminder: Model<ReminderType, ReminderType>): stri
     } (${
         reminder.dataValues.frequency
     }) ${
-        ReminderMemory.numberToTime(reminder.dataValues.time, reminder.dataValues.frequency)
+        numberToTimeString(reminder.dataValues.time, reminder.dataValues.frequency)
     }`;
 }
 
@@ -321,7 +321,7 @@ const reminderWeeklyHandler: PollAnswerHandler = {
             ReminderMemory.setTime(chatId, selectedOption);
 
             bot.editMessageText(
-                `You selected: ${ReminderMemory.weeklyNumberToString(selectedOption)}.`,
+                `You selected: ${weeklyNumberToString(selectedOption)}.`,
                 {
                     chat_id: chatId,
                     message_id: messageId,
@@ -359,11 +359,11 @@ const reminderOnceHandler: PlainHandler = {
                 return;
             }
             if (date < new Date()) {
-                bot.sendMessage(chatId, "Oops, you cannot send reminder for something in the past.");
+                bot.sendMessage(chatId, "Oops, you cannot set reminder for something in the past.");
                 return;
             }
             if (date > new Date(2030, 11, 31)) {
-                bot.sendMessage(chatId, "Oops, you cannot send reminder for something beyond the year of 2030.");
+                bot.sendMessage(chatId, "Oops, you cannot set reminder for something beyond the year of 2030.");
                 return;
             }
             ReminderMemory.setTime(chatId, date.getTime() / 1000);

@@ -2,7 +2,7 @@ import TelegramBot, { CallbackQuery, Message } from 'node-telegram-bot-api';
 import { PlainHandler, PollAnswerHandler, TextHandler } from '../utils/types';
 import UserStates from '../utils/states';
 import { launch } from 'puppeteer';
-import { getRandomString } from '../utils/primitives';
+import { getRandomString, numberToTime, parseDateTime, weeklyNumberToString } from '../utils/primitives';
 import { unlink } from 'fs';
 import { confirmErrorMessage, dailyPoll, frequencyPoll, onceQuestion, weeklyPoll } from './data';
 import { TrackMemory } from './temp';
@@ -238,6 +238,89 @@ const trackFrequencyHandler: PollAnswerHandler = {
     },
 };
 
+const trackDailyHandler: PollAnswerHandler = {
+    handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
+        const chatId = query.message!.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_DAILY
+                && query.message!.text === dailyPoll.question) {
+            const messageId = query.message!.message_id;
+            const selectedOption = Number(query.data);
+            TrackMemory.setTime(chatId, selectedOption);
+
+            bot.editMessageText(
+                `You selected: ${numberToTime(selectedOption)}`,
+                {
+                    chat_id: chatId,
+                    message_id: messageId,
+                },
+            );
+
+            // build
+            
+            UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+            bot.sendMessage(chatId, `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId)}`, {
+                parse_mode: "Markdown",
+            });
+        }
+    },
+};
+
+const trackWeeklyHandler: PollAnswerHandler = {
+    handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
+        const chatId = query.message!.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_WEEKLY
+                && query.message!.text === weeklyPoll.question) {
+            const messageId = query.message!.message_id;
+            const selectedOption = Number(query.data);
+            TrackMemory.setTime(chatId, selectedOption);
+
+            bot.editMessageText(
+                `You selected: ${weeklyNumberToString(selectedOption)}`,
+                {
+                    chat_id: chatId,
+                    message_id: messageId,
+                },
+            );
+
+            // build
+
+            UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+            bot.sendMessage(chatId, `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId)}`, {
+                parse_mode: "Markdown",
+            });
+        }
+    },
+};
+
+const trackOnceHandler: PlainHandler = {
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_ONCE) {
+            const date: Date | undefined = parseDateTime(msg.text!);
+            if (!date || isNaN(date.getTime())) {
+                bot.sendMessage(chatId, "Oops, I do not understand your datetime.");
+                return;
+            }
+            if (date < new Date()) {
+                bot.sendMessage(chatId, "Oops, you cannot set website tracker for something in the past.");
+                return;
+            }
+            if (date > new Date(2030, 11, 31)) {
+                bot.sendMessage(chatId, "Oops, you cannot set website tracker for some time beyond the year of 2030.");
+                return;
+            }
+            TrackMemory.setTime(chatId, date.getTime() / 1000);
+
+            // build
+
+            UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+            bot.sendMessage(chatId, `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId)}`, {
+                parse_mode: "Markdown",
+            });
+        }
+    },
+};
+
 export const trackTextHandlers: Array<TextHandler> = [
     trackHandler,
     trackAddHandler,
@@ -249,8 +332,11 @@ export const trackPlainHandler: Array<PlainHandler> = [
     trackSelectorHandler,
     trackSelectorConfirmHandler,
     trackCaptionHandler,
+    trackOnceHandler,
 ];
 
 export const trackPollHandler: Array<PollAnswerHandler> = [
     trackFrequencyHandler,
+    trackDailyHandler,
+    trackWeeklyHandler,
 ];
