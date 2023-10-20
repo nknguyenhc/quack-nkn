@@ -220,9 +220,10 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         allowPlain: true,
     }],
     [STATE.TRACK_SELECTOR, {
-        commands: [/^\/start$/, /^\/cancel$/],
-        errorMessage: 'Invalid command, here is the current list of available commands for adding a website tracker:\n'
+        commands: [/^\/start$/, /^\/cancel$/, /^\/selector$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for indicating page section:\n'
             + '/start - show start message\n'
+            + '/selector - more info about query selector\n'
             + '/cancel - cancel adding a website tracker',
         allowPlain: true,
     }],

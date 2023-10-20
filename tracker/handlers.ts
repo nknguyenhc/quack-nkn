@@ -91,11 +91,9 @@ const trackConfirmHandler: PlainHandler = {
                 setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR), 100);
                 bot.sendMessage(chatId, "Alright, do you wish to scroll down to a particular section?\n"
                         + "If you do not need me to scroll down, simply type \"top\".\n"
-                        + "If you wish me to scroll down by a fixed number of pixels, give me the number of pixels.\n"
-                        + "Otherwise, give me the query selector such that when I run `document.querySelectorAll(yourQuerySelector)`, "
-                        + "the HTML element should be in the result list.", {
-                            parse_mode: "Markdown",
-                        });
+                        + "If you wish me to scroll down, give me the number of pixels that I need to scroll down. "
+                        + "For your reference 400 pixels are around half the height of your browser.\n"
+                        + "For advanced user, you may use query selector. /selector for more info.");
             } else if (reply === 'no' || reply === 'n') {
                 UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
                 TrackMemory.deleteUser(chatId);
@@ -107,6 +105,21 @@ const trackConfirmHandler: PlainHandler = {
         }
     }
 };
+
+const querySelectorInfoHandler: TextHandler = {
+    command: /^\/selector$/,
+    handler: (bot: TelegramBot) => (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_SELECTOR) {
+            bot.sendMessage(chatId, "The query selector must be such that when I run `document.querySelectorAll(yourQuerySelector)` "
+                    + "in the javascript console on the page, the HTML element should be in the result list. "
+                    + "For example, if you give me \"div.box\", I will find all HTML div elements with class name \"box\", "
+                    + "and your element must be in the list.", {
+                        parse_mode: "Markdown",
+                    });
+        }
+    }
+}
 
 const trackSelectorHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
@@ -420,6 +433,7 @@ const trackOnceHandler: PlainHandler = {
 export const trackTextHandlers: Array<TextHandler> = [
     trackHandler,
     trackAddHandler,
+    querySelectorInfoHandler,
 ];
 
 export const trackPlainHandler: Array<PlainHandler> = [
