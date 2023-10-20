@@ -29,12 +29,3 @@ User.hasMany(Reminder, {
         allowNull: false,
     },
 });
-
-switch (process.argv[2]) {
-    case 'migrate':
-        User.sync({ alter: true });
-        break;
-    case 'clear':
-        User.sync({ force: true });
-        break;
-}

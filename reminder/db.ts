@@ -37,12 +37,3 @@ export const Reminder = sequelize.define<Model<ReminderType>>('Reminder', {
         allowNull: false,
     },
 });
-
-switch (process.argv[2]) {
-    case 'migrate':
-        Reminder.sync({ alter: true });
-        break;
-    case 'clear':
-        Reminder.sync({ force: true });
-        break;
-}
