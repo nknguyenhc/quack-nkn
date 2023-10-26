@@ -6,6 +6,7 @@ import { trackPlainHandler, trackPollHandler, trackTextHandlers } from './tracke
 import dotenv from 'dotenv';
 import { User } from './users/db';
 import { Reminder } from './reminder/db';
+import { Tracker } from './tracker/db';
 
 dotenv.config();
 
@@ -60,11 +61,13 @@ function main() {
 async function migrate() {
     await User.sync({ alter: true });
     await Reminder.sync({ alter: true });
+    await Tracker.sync({ alter: true });
 }
 
 async function clear() {
     await User.sync({ force: true });
     await Reminder.sync({ force: true });
+    await Tracker.sync({ force: true });
 }
 
 switch (process.argv[2]) {

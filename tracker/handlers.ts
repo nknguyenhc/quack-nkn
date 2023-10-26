@@ -6,9 +6,8 @@ import { getRandomString, numberToTime, parseDateTime, weeklyNumberToString } fr
 import { unlink } from 'fs';
 import { confirmErrorMessage, dailyPoll, frequencyPoll, onceQuestion, weeklyPoll } from './data';
 import { TrackMemory } from './temp';
-import { FrequencyType } from '../utils/schedule';
-
-const mainBrowser = launch();
+import { FrequencyType, setReminder } from '../utils/schedule';
+import { Tracker } from './db';
 
 const trackHandler: TextHandler = {
     command: /^\/track$/,
@@ -48,7 +47,7 @@ const trackAddressHandler: PlainHandler = {
             TrackMemory.addUser(chatId);
             TrackMemory.setLink(chatId, link);
 
-            const browser = await mainBrowser;
+            const browser = await launch();
             const page = await browser.newPage();
             page.setViewport({
                 width: 1440,
@@ -136,7 +135,7 @@ const trackSelectorHandler: PlainHandler = {
             }
             
             const link = TrackMemory.getLink(chatId);
-            const browser = await mainBrowser;
+            const browser = await launch();
             const page = await browser.newPage();
             page.setViewport({
                 width: 1440,
@@ -222,7 +221,7 @@ const trackSelectorIndexHandler: PlainHandler = {
             TrackMemory.setIndex(chatId, index);
             const selector = TrackMemory.getSelector(chatId);
             const link = TrackMemory.getLink(chatId);
-            const browser = await mainBrowser;
+            const browser = await launch();
             const page = await browser.newPage();
             page.setViewport({
                 width: 1440,
@@ -364,7 +363,56 @@ const trackDailyHandler: PollAnswerHandler = {
                 },
             );
 
-            // build
+            const { id, link, selector, index, caption } = await TrackMemory.build(chatId);
+            const isValid = () => Tracker.findOne({
+                where: {
+                    id: id,
+                },
+            }).then(tracker => tracker !== null);
+            const job = async () => {
+                const browser = await launch();
+                const page = await browser.newPage();
+                page.setViewport({
+                    width: 1440,
+                    height: 715,
+                });
+                await page.goto(link);
+
+                const tryNumber = Number(selector);
+                if (!isNaN(tryNumber)) {
+                    await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
+                } else {
+                    const elements = await page.$$(selector);
+                    if (elements.length >= 1) {
+                        const element = index && index < elements.length ? elements[index] : elements[0];
+                        await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
+                            element.scrollIntoView();
+                        }, element);
+                        await page.evaluate('window.scrollBy(0, -150)');
+                    }
+                }
+
+                const filename = getRandomString();
+                await page.screenshot({
+                    path: './media' + filename + '.jpg',
+                });
+                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
+                    caption: caption,
+                }).then(() => {
+                    unlink('media/' + filename + '.jpg', (err) => {
+                        if (err) {
+                            console.log(err);
+                        }
+                    });
+                });
+                return;
+            };
+            setReminder({
+                number: selectedOption,
+                frequency: 'daily',
+                job: job,
+                isValid: isValid,
+            });
             
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
             bot.sendMessage(chatId, `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId)}`, {
@@ -391,7 +439,56 @@ const trackWeeklyHandler: PollAnswerHandler = {
                 },
             );
 
-            // build
+            const { id, link, selector, index, caption } = await TrackMemory.build(chatId);
+            const isValid = () => Tracker.findOne({
+                where: {
+                    id: id,
+                },
+            }).then(tracker => tracker !== null);
+            const job = async () => {
+                const browser = await launch();
+                const page = await browser.newPage();
+                page.setViewport({
+                    width: 1440,
+                    height: 715,
+                });
+                await page.goto(link);
+
+                const tryNumber = Number(selector);
+                if (!isNaN(tryNumber)) {
+                    await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
+                } else {
+                    const elements = await page.$$(selector);
+                    if (elements.length >= 1) {
+                        const element = index && index < elements.length ? elements[index] : elements[0];
+                        await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
+                            element.scrollIntoView();
+                        }, element);
+                        await page.evaluate('window.scrollBy(0, -150)');
+                    }
+                }
+
+                const filename = getRandomString();
+                await page.screenshot({
+                    path: './media' + filename + '.jpg',
+                });
+                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
+                    caption: caption,
+                }).then(() => {
+                    unlink('media/' + filename + '.jpg', (err) => {
+                        if (err) {
+                            console.log(err);
+                        }
+                    });
+                });
+                return;
+            };
+            setReminder({
+                number: selectedOption,
+                frequency: 'weekly',
+                job: job,
+                isValid: isValid,
+            });
 
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
             bot.sendMessage(chatId, `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId)}`, {
@@ -420,7 +517,58 @@ const trackOnceHandler: PlainHandler = {
             }
             TrackMemory.setTime(chatId, date.getTime() / 1000);
 
-            // build
+            const { id, link, selector, index, caption } = await TrackMemory.build(chatId);
+            console.log("link: ", link);
+            const isValid = () => Tracker.findOne({
+                where: {
+                    id: id,
+                },
+            }).then(tracker => tracker !== null);
+            const job = async () => {
+                const browser = await launch();
+                const page = await browser.newPage();
+                page.setViewport({
+                    width: 1440,
+                    height: 715,
+                });
+                console.log("link: ", link);
+                await page.goto(link);
+
+                const tryNumber = Number(selector);
+                if (!isNaN(tryNumber)) {
+                    await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
+                } else {
+                    const elements = await page.$$(selector);
+                    if (elements.length >= 1) {
+                        const element = index && index < elements.length ? elements[index] : elements[0];
+                        await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
+                            element.scrollIntoView();
+                        }, element);
+                        await page.evaluate('window.scrollBy(0, -150)');
+                    }
+                }
+
+                const filename = getRandomString();
+                await page.screenshot({
+                    path: './media/' + filename + '.jpg',
+                });
+                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
+                    caption: caption,
+                }).then(() => {
+                    unlink('media/' + filename + '.jpg', (err) => {
+                        if (err) {
+                            console.log(err);
+                        }
+                    });
+                });
+                return;
+            };
+            setReminder({
+                number: date.getTime()/ 1000,
+                frequency: 'once',
+                job: job,
+                isValid: isValid,
+            });
 
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
             bot.sendMessage(chatId, `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId)}`, {

@@ -1,5 +1,6 @@
-import { numberToTimeString } from "../utils/primitives";
+import { getRandomString, numberToTimeString } from "../utils/primitives";
 import { FrequencyType } from "../utils/schedule";
+import { Tracker } from './db';
 
 type TrackType = {
     link?: string,
@@ -72,6 +73,34 @@ export class TrackMemory {
         const result: string = `\`${link}\` ${numberToTimeString(time, frequency)} with caption "${caption}"`;
         delete TrackMemory.#tracks[chatId];
         return result;
+    }
+
+    static async build(chatId: number): Promise<{
+        id: string,
+        link: string,
+        selector: string,
+        index?: number,
+        caption: string,
+    }> {
+        const id = getRandomString();
+        const { link, selector, index, caption, pixelCount, frequency, time } = TrackMemory.#tracks[chatId];
+        await Tracker.create({
+            id: id,
+            address: link,
+            selector: selector ? selector : String(pixelCount),
+            selectorIndex: index,
+            caption: caption,
+            frequency: frequency,
+            time: time,
+            userChatId: String(chatId),
+        });
+        return {
+            id,
+            link,
+            selector: selector ? selector: String(pixelCount),
+            index,
+            caption,
+        };
     }
 
     static deleteUser(chatId: number) {
