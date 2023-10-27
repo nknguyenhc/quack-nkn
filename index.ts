@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import { User } from './users/db';
 import { Reminder } from './reminder/db';
 import { Tracker } from './tracker/db';
+import trackStartJob from './tracker/start';
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ function main() {
     const bot = new TelegramBot(process.env.TOKEN as string, { polling: true });
 
     reminderStartJob(bot);
+    trackStartJob(bot);
 
     textUserHandlers.forEach((handler) => {
         bot.onText(handler.command, handler.handler(bot));
@@ -72,7 +74,7 @@ async function clear() {
 
 switch (process.argv[2]) {
     case 'migrate':
-        migrate()
+        migrate();
         break;
     case 'clear':
         clear();

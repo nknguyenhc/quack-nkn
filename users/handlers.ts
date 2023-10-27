@@ -3,6 +3,7 @@ import { User } from './db';
 import { PlainHandler, TextHandler } from '../utils/types';
 import UserStates, { knownCommands } from "../utils/states";
 import { ReminderDeleteMemory, ReminderEditMemory, ReminderMemory } from "../reminder/temp";
+import { TrackMemory } from "../tracker/temp";
 
 const startHandler: TextHandler = {
     command: /^\/start$/,
@@ -46,6 +47,7 @@ const cancelHandler: TextHandler = {
         ReminderMemory.deleteMemory(chatId);
         ReminderEditMemory.deleteMemory(chatId);
         ReminderDeleteMemory.deleteMemory(chatId);
+        TrackMemory.deleteUser(chatId);
         bot.sendMessage(chatId, "Operation cancelled.");
     }
 };

@@ -70,11 +70,7 @@ const trackAddressHandler: PlainHandler = {
             bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
                 caption: "Is this the site that you want to track?",
             }).then(() => {
-                unlink('media/' + filename + '.jpg', (err) => {
-                    if (err) {
-                        console.log(err);
-                    }
-                });
+                unlink('media/' + filename + '.jpg', () => {});
             });
             UserStates.setUserState(chatId, UserStates.STATE.TRACK_CONFIRM);
         }
@@ -141,7 +137,16 @@ const trackSelectorHandler: PlainHandler = {
                 width: 1440,
                 height: 715,
             });
-            await page.goto(link);
+            
+            try {
+                await page.goto(link);
+            } catch (e) {
+                bot.sendMessage(chatId, "Oops, looks like the page has just been removed. "
+                        + "Please try adding another tracker.");
+                TrackMemory.deleteUser(chatId);
+                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                return;
+            }
 
             const tryNumber = Number(selector);
             if (!isNaN(tryNumber)) {
@@ -155,11 +160,7 @@ const trackSelectorHandler: PlainHandler = {
                 bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
                     caption: "Is this the section you want to track?",
                 }).then(() => {
-                    unlink('media/' + filename + ".jpg", (err) => {
-                        if (err) {
-                            console.log(err);
-                        }
-                    });
+                    unlink('media/' + filename + ".jpg", () => {});
                 });
                 return;
             }
@@ -180,11 +181,7 @@ const trackSelectorHandler: PlainHandler = {
                 bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
                     caption: "Is this the section you want to track?",
                 }).then(() => {
-                    unlink('media/' + filename + '.jpg', (err) => {
-                        if (err) {
-                            console.log(err);
-                        }
-                    });
+                    unlink('media/' + filename + '.jpg', () => {});
                 });
             } else if (elements.length > 1) {
                 TrackMemory.setSelector(chatId, selector);
@@ -227,7 +224,17 @@ const trackSelectorIndexHandler: PlainHandler = {
                 width: 1440,
                 height: 715,
             });
-            await page.goto(link);
+            
+            try {
+                await page.goto(link);
+            } catch (e) {
+                bot.sendMessage(chatId, "Oops, looks like the page has just been removed. "
+                        + "Please try adding another tracker.");
+                TrackMemory.deleteUser(chatId);
+                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                return;
+            }
+
             const elements = await page.$$(selector);
 
             if (elements.length < index) {
@@ -251,11 +258,7 @@ const trackSelectorIndexHandler: PlainHandler = {
             bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
                 caption: "Is this the section you want to track?",
             }).then(() => {
-                unlink('media/' + filename + '.jpg', (err) => {
-                    if (err) {
-                        console.log(err);
-                    }
-                });
+                unlink('media/' + filename + '.jpg', () => {});
             });
         }
     },
@@ -376,7 +379,13 @@ const trackDailyHandler: PollAnswerHandler = {
                     width: 1440,
                     height: 715,
                 });
-                await page.goto(link);
+                
+                try {
+                    await page.goto(link);
+                } catch (e) {
+                    bot.sendMessage(chatId, `Oops, looks like the page at ${link} has been removed.`);
+                    return;
+                }
 
                 const tryNumber = Number(selector);
                 if (!isNaN(tryNumber)) {
@@ -399,11 +408,7 @@ const trackDailyHandler: PollAnswerHandler = {
                 bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
                     caption: caption,
                 }).then(() => {
-                    unlink('media/' + filename + '.jpg', (err) => {
-                        if (err) {
-                            console.log(err);
-                        }
-                    });
+                    unlink('media/' + filename + '.jpg', () => {});
                 });
                 return;
             };
@@ -452,7 +457,13 @@ const trackWeeklyHandler: PollAnswerHandler = {
                     width: 1440,
                     height: 715,
                 });
-                await page.goto(link);
+                
+                try {
+                    await page.goto(link);
+                } catch (e) {
+                    bot.sendMessage(chatId, `Oops, looks like the page at ${link} has been removed.`);
+                    return;
+                }
 
                 const tryNumber = Number(selector);
                 if (!isNaN(tryNumber)) {
@@ -475,11 +486,7 @@ const trackWeeklyHandler: PollAnswerHandler = {
                 bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
                     caption: caption,
                 }).then(() => {
-                    unlink('media/' + filename + '.jpg', (err) => {
-                        if (err) {
-                            console.log(err);
-                        }
-                    });
+                    unlink('media/' + filename + '.jpg', () => {});
                 });
                 return;
             };
@@ -518,7 +525,6 @@ const trackOnceHandler: PlainHandler = {
             TrackMemory.setTime(chatId, date.getTime() / 1000);
 
             const { id, link, selector, index, caption } = await TrackMemory.build(chatId);
-            console.log("link: ", link);
             const isValid = () => Tracker.findOne({
                 where: {
                     id: id,
@@ -531,8 +537,13 @@ const trackOnceHandler: PlainHandler = {
                     width: 1440,
                     height: 715,
                 });
-                console.log("link: ", link);
-                await page.goto(link);
+                
+                try {
+                    await page.goto(link);
+                } catch (e) {
+                    bot.sendMessage(chatId, `Oops, looks like the page at ${link} has been removed.`);
+                    return;
+                }
 
                 const tryNumber = Number(selector);
                 if (!isNaN(tryNumber)) {
@@ -555,11 +566,7 @@ const trackOnceHandler: PlainHandler = {
                 bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
                     caption: caption,
                 }).then(() => {
-                    unlink('media/' + filename + '.jpg', (err) => {
-                        if (err) {
-                            console.log(err);
-                        }
-                    });
+                    unlink('media/' + filename + '.jpg', () => {});
                 });
                 return;
             };

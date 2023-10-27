@@ -50,7 +50,6 @@ const addReminderHandler: TextHandler = {
     command: /^\/reminder$/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
-        console.log("reminder called", UserStates.getUserState(chatId), UserStates.STATE.ADD);
         if (UserStates.getUserState(chatId) === UserStates.STATE.ADD) {
             UserStates.setUserState(chatId, UserStates.STATE.REMINDER_ADD);
             ReminderMemory.setUser(chatId);
