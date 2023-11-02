@@ -2,12 +2,25 @@ import TelegramBot, { CallbackQuery, Message } from 'node-telegram-bot-api';
 import { PlainHandler, PollAnswerHandler, TextHandler } from '../utils/types';
 import UserStates from '../utils/states';
 import { launch, ElementHandle, NodeFor } from 'puppeteer';
-import { getRandomString, numberToTime, parseDateTime, weeklyNumberToString } from '../utils/primitives';
+import { getRandomString, numberToTime, numberToTimeString, parseDateTime, weeklyNumberToString } from '../utils/primitives';
 import { unlink } from 'fs';
 import { confirmErrorMessage, dailyPoll, frequencyPoll, onceQuestion, weeklyPoll } from './data';
 import { TrackMemory } from './temp';
 import { FrequencyType, setReminder } from '../utils/schedule';
-import { Tracker } from './db';
+import { Tracker, TrackerType } from './db';
+import { Model } from 'sequelize';
+
+const trackerDataToString = (tracker: Model<TrackerType, TrackerType>): string => {
+    return `\`${
+        tracker.dataValues.address
+    }\` (${
+        tracker.dataValues.frequency
+    }) ${
+        numberToTimeString(tracker.dataValues.time, tracker.dataValues.frequency)
+    } (selector: ${
+        tracker.dataValues.selector
+    })`;
+};
 
 const trackHandler: TextHandler = {
     command: /^\/track$/,
@@ -34,6 +47,34 @@ const trackAddHandler: TextHandler = {
                 + "In your message, send the address of the website only. Do not add any extra text.\n"
                 + "Please take note that I can only track websites that are publicly available and is not blocked by Chrome "
                 + "(i.e. does not require logging in, no malicious content, no onion website)");
+        }
+    },
+};
+
+const trackListHandler: TextHandler = {
+    command: /^\/list$/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_START) {
+            const allTrackers = await Tracker.findAll({
+                where: {
+                    userChatId: String(chatId),
+                },
+            });
+            if (allTrackers.length === 0) {
+                bot.sendMessage(chatId, "You have no website trackers yet.");
+                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                return;
+            }
+
+            let message = 'Alright, here is your list of website trackers:';
+            allTrackers.forEach((tracker, trackerIndex) => {
+                message += `\n${trackerIndex + 1}. ${trackerDataToString(tracker)}`;
+            });
+            bot.sendMessage(chatId, message, {
+                parse_mode: "Markdown",
+            });
+            UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
         }
     },
 };
@@ -589,6 +630,7 @@ export const trackTextHandlers: Array<TextHandler> = [
     trackHandler,
     trackAddHandler,
     querySelectorInfoHandler,
+    trackListHandler,
 ];
 
 export const trackPlainHandler: Array<PlainHandler> = [

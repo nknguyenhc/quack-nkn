@@ -8,7 +8,7 @@ dotenv.config();
 
 const sequelize = getConnection();
 
-type TrackerType = {
+export type TrackerType = {
     id: string,
     address: string,
     selector: string,
