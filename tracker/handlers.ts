@@ -1,7 +1,7 @@
 import TelegramBot, { CallbackQuery, Message } from 'node-telegram-bot-api';
 import { PlainHandler, PollAnswerHandler, TextHandler } from '../utils/types';
 import UserStates from '../utils/states';
-import { launch, ElementHandle, NodeFor } from 'puppeteer';
+import { ElementHandle, NodeFor } from 'puppeteer';
 import { getRandomString, numberToTime, numberToTimeString, parseDateTime, weeklyNumberToString } from '../utils/primitives';
 import { unlink } from 'fs';
 import { confirmErrorMessage, dailyPoll, frequencyPoll, onceQuestion, weeklyPoll } from './data';
@@ -9,6 +9,7 @@ import { TrackDeleteMemory, TrackEditMemory, TrackMemory } from './temp';
 import { FrequencyType, setReminder } from '../utils/schedule';
 import { Tracker, TrackerType } from './db';
 import { Model } from 'sequelize';
+import { launchBrowserAndPage } from './functions';
 
 const trackerDataToString = (tracker: Model<TrackerType, TrackerType>): string => {
     return `\`${
@@ -132,12 +133,7 @@ const trackAddressHandler: PlainHandler = {
             TrackMemory.addUser(chatId);
             TrackMemory.setLink(chatId, link);
 
-            const browser = await launch();
-            const page = await browser.newPage();
-            page.setViewport({
-                width: 1440,
-                height: 715,
-            });
+            const { browser, page } = await launchBrowserAndPage();
 
             try {
                 await page.goto(link);
@@ -218,12 +214,7 @@ const trackSelectorHandler: PlainHandler = {
             
             bot.sendMessage(chatId, "Alright, give me a second.");
             const link = TrackMemory.getLink(chatId);
-            const browser = await launch();
-            const page = await browser.newPage();
-            page.setViewport({
-                width: 1440,
-                height: 715,
-            });
+            const { browser, page } = await launchBrowserAndPage();
             
             try {
                 await page.goto(link);
@@ -249,6 +240,7 @@ const trackSelectorHandler: PlainHandler = {
                 }).then(() => {
                     unlink('media/' + filename + ".jpg", () => {});
                 });
+                browser.close();
                 return;
             }
 
@@ -305,12 +297,7 @@ const trackSelectorIndexHandler: PlainHandler = {
             TrackMemory.setIndex(chatId, index);
             const selector = TrackMemory.getSelector(chatId);
             const link = TrackMemory.getLink(chatId);
-            const browser = await launch();
-            const page = await browser.newPage();
-            page.setViewport({
-                width: 1440,
-                height: 715,
-            });
+            const { browser, page } = await launchBrowserAndPage();
             
             try {
                 await page.goto(link);
@@ -329,6 +316,7 @@ const trackSelectorIndexHandler: PlainHandler = {
                 TrackMemory.deleteUser(chatId);
                 bot.sendMessage(chatId, "Oops, the page appears to have changed as we are talking. "
                         + "Please start over again.");
+                browser.close();
                 return;
             }
 
@@ -340,6 +328,7 @@ const trackSelectorIndexHandler: PlainHandler = {
             await page.screenshot({
                 path: './media/' + filename + '.jpg',
             });
+            browser.close();
 
             setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR_CONFIRM), 100);
             bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
@@ -460,17 +449,13 @@ const trackDailyHandler: PollAnswerHandler = {
                 },
             }).then(tracker => tracker !== null);
             const job = async () => {
-                const browser = await launch();
-                const page = await browser.newPage();
-                page.setViewport({
-                    width: 1440,
-                    height: 715,
-                });
+                const { browser, page } = await launchBrowserAndPage();
                 
                 try {
                     await page.goto(link);
                 } catch (e) {
                     bot.sendMessage(chatId, `Oops, looks like the page at ${link} has been removed.`);
+                    browser.close();
                     return;
                 }
 
@@ -497,6 +482,7 @@ const trackDailyHandler: PollAnswerHandler = {
                 }).then(() => {
                     unlink('media/' + filename + '.jpg', () => {});
                 });
+                browser.close();
                 return;
             };
             setReminder({
@@ -538,17 +524,13 @@ const trackWeeklyHandler: PollAnswerHandler = {
                 },
             }).then(tracker => tracker !== null);
             const job = async () => {
-                const browser = await launch();
-                const page = await browser.newPage();
-                page.setViewport({
-                    width: 1440,
-                    height: 715,
-                });
+                const { browser, page } = await launchBrowserAndPage();
                 
                 try {
                     await page.goto(link);
                 } catch (e) {
                     bot.sendMessage(chatId, `Oops, looks like the page at ${link} has been removed.`);
+                    browser.close();
                     return;
                 }
 
@@ -575,6 +557,7 @@ const trackWeeklyHandler: PollAnswerHandler = {
                 }).then(() => {
                     unlink('media/' + filename + '.jpg', () => {});
                 });
+                browser.close();
                 return;
             };
             setReminder({
@@ -618,17 +601,13 @@ const trackOnceHandler: PlainHandler = {
                 },
             }).then(tracker => tracker !== null);
             const job = async () => {
-                const browser = await launch();
-                const page = await browser.newPage();
-                page.setViewport({
-                    width: 1440,
-                    height: 715,
-                });
+                const { browser, page } = await launchBrowserAndPage();
                 
                 try {
                     await page.goto(link);
                 } catch (e) {
                     bot.sendMessage(chatId, `Oops, looks like the page at ${link} has been removed.`);
+                    browser.close();
                     return;
                 }
 
@@ -655,6 +634,7 @@ const trackOnceHandler: PlainHandler = {
                 }).then(() => {
                     unlink('media/' + filename + '.jpg', () => {});
                 });
+                browser.close();
                 return;
             };
             setReminder({
@@ -779,12 +759,7 @@ const trackEditLinkHandler: PlainHandler = {
             bot.sendMessage(chatId, 'Alright, give me a second.');
             TrackEditMemory.setLink(chatId, link);
 
-            const browser = await launch();
-            const page = await browser.newPage();
-            page.setViewport({
-                width: 1440,
-                height: 715,
-            });
+            const { browser, page } = await launchBrowserAndPage();
 
             try {
                 await page.goto(link);
@@ -864,17 +839,13 @@ const trackEditSelectorHandler: PlainHandler = {
                     },
                 }).then(tracker => tracker !== null);
                 const job = async () => {
-                    const browser = await launch();
-                    const page = await browser.newPage();
-                    page.setViewport({
-                        width: 1440,
-                        height: 715,
-                    });
+                    const { browser, page } = await launchBrowserAndPage();
 
                     try {
                         await page.goto(address);
                     } catch (e) {
                         bot.sendMessage(chatId, `Oops, looks like that page at ${address} has been removed.`);
+                        browser.close();
                         return;
                     }
 
@@ -901,6 +872,7 @@ const trackEditSelectorHandler: PlainHandler = {
                     }).then(() => {
                         unlink('media/' + filename + '.jpg', () => {});
                     });
+                    browser.close();
                 };
                 setReminder({
                     number: time,
@@ -919,12 +891,7 @@ const trackEditSelectorHandler: PlainHandler = {
 
             bot.sendMessage(chatId, "Alright, give me a second.");
             const link = TrackEditMemory.getLink(chatId);
-            const browser = await launch();
-            const page = await browser.newPage();
-            page.setViewport({
-                width: 1440,
-                height: 715,
-            });
+            const { browser, page } = await launchBrowserAndPage();
 
             try {
                 await page.goto(link);
@@ -933,6 +900,7 @@ const trackEditSelectorHandler: PlainHandler = {
                 UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
                 bot.sendMessage(chatId, "Oops, looks like the page has just been removed. "
                     + "Operation cancelled.");
+                browser.close();
                 return;
             }
 
@@ -950,6 +918,7 @@ const trackEditSelectorHandler: PlainHandler = {
                 }).then(() => {
                     unlink('media/' + filename + '.jpg', () => {});
                 });
+                browser.close();
                 return;
             }
 
@@ -1007,12 +976,7 @@ const trackEditSelectorIndexHandler: PlainHandler = {
             TrackEditMemory.setIndex(chatId, index);
             const selector = TrackEditMemory.getSelector(chatId);
             const link = TrackEditMemory.getLink(chatId);
-            const browser = await launch();
-            const page = await browser.newPage();
-            page.setViewport({
-                width: 1440,
-                height: 715,
-            });
+            const { browser, page } = await launchBrowserAndPage();
 
             try {
                 await page.goto(link);
@@ -1021,6 +985,7 @@ const trackEditSelectorIndexHandler: PlainHandler = {
                 TrackEditMemory.deleteUser(chatId);
                 bot.sendMessage(chatId, "Oops, looks like the page has just been removed. "
                     + "Operation cancelled.");
+                browser.close();
                 return;
             }
 
@@ -1031,6 +996,7 @@ const trackEditSelectorIndexHandler: PlainHandler = {
                 TrackMemory.deleteUser(chatId);
                 bot.sendMessage(chatId, "Oops, the page appears to have changed as we are talking. "
                     + "Operation cancelled.");
+                browser.close();
                 return;
             }
 
@@ -1049,6 +1015,7 @@ const trackEditSelectorIndexHandler: PlainHandler = {
             }).then(() => {
                 unlink('media/' + filename + '.jpg', () => {});
             });
+            browser.close();
         }
     },
 };
@@ -1067,17 +1034,13 @@ const trackEditSelectorConfirmHandler: PlainHandler = {
                     },
                 }).then(tracker => tracker !== null);
                 const job = async () => {
-                    const browser = await launch();
-                    const page = await browser.newPage();
-                    page.setViewport({
-                        width: 1440,
-                        height: 715,
-                    });
+                    const { browser, page } = await launchBrowserAndPage();
 
                     try {
                         await page.goto(address);
                     } catch (e) {
                         bot.sendMessage(chatId, `Oops, looks like that page at ${address} has been removed.`);
+                        browser.close();
                         return;
                     }
 
@@ -1104,6 +1067,7 @@ const trackEditSelectorConfirmHandler: PlainHandler = {
                     }).then(() => {
                         unlink('media/' + filename + '.jpg', () => {});
                     });
+                    browser.close();
                 };
                 setReminder({
                     number: time,
@@ -1151,17 +1115,13 @@ const trackEditCaptionHandler: PlainHandler = {
                 },
             }).then(tracker => tracker !== null);
             const job = async () => {
-                const browser = await launch();
-                const page = await browser.newPage();
-                page.setViewport({
-                    width: 1440,
-                    height: 715,
-                });
+                const { browser, page } = await launchBrowserAndPage();
 
                 try {
                     await page.goto(address);
                 } catch (e) {
                     bot.sendMessage(chatId, `Oops, looks like that page at ${address} has been removed.`);
+                    browser.close();
                     return;
                 }
 
@@ -1188,6 +1148,7 @@ const trackEditCaptionHandler: PlainHandler = {
                 }).then(() => {
                     unlink('media/' + filename + '.jpg', () => {});
                 });
+                browser.close();
             };
             setReminder({
                 number: time,
@@ -1295,17 +1256,13 @@ const trackEditDailyHandler: PollAnswerHandler = {
                 },
             }).then(tracker => tracker !== null);
             const job = async () => {
-                const browser = await launch();
-                const page = await browser.newPage();
-                page.setViewport({
-                    width: 1440,
-                    height: 715,
-                });
+                const { browser, page } = await launchBrowserAndPage();
 
                 try {
                     await page.goto(address);
                 } catch (e) {
                     bot.sendMessage(chatId, `Oops, looks like that page at ${address} has been removed.`);
+                    browser.close();
                     return;
                 }
 
@@ -1332,6 +1289,7 @@ const trackEditDailyHandler: PollAnswerHandler = {
                 }).then(() => {
                     unlink('media/' + filename + '.jpg', () => {});
                 });
+                browser.close();
             };
             setReminder({
                 number: time,
@@ -1373,17 +1331,13 @@ const trackEditWeeklyHandler: PollAnswerHandler = {
                 },
             }).then(tracker => tracker !== null);
             const job = async () => {
-                const browser = await launch();
-                const page = await browser.newPage();
-                page.setViewport({
-                    width: 1440,
-                    height: 715,
-                });
+                const { browser, page } = await launchBrowserAndPage();
 
                 try {
                     await page.goto(address);
                 } catch (e) {
                     bot.sendMessage(chatId, `Oops, looks like that page at ${address} has been removed.`);
+                    browser.close();
                     return;
                 }
 
@@ -1410,6 +1364,7 @@ const trackEditWeeklyHandler: PollAnswerHandler = {
                 }).then(() => {
                     unlink('media/' + filename + '.jpg', () => {});
                 });
+                browser.close();
             };
             setReminder({
                 number: time,
@@ -1453,17 +1408,13 @@ const trackEditOnceHandler: PlainHandler = {
                 },
             }).then(tracker => tracker !== null);
             const job = async () => {
-                const browser = await launch();
-                const page = await browser.newPage();
-                page.setViewport({
-                    width: 1440,
-                    height: 715,
-                });
+                const { browser, page } = await launchBrowserAndPage();
 
                 try {
                     await page.goto(address);
                 } catch (e) {
                     bot.sendMessage(chatId, `Oops, looks like that page at ${address} has been removed.`);
+                    browser.close();
                     return;
                 }
 
@@ -1490,6 +1441,7 @@ const trackEditOnceHandler: PlainHandler = {
                 }).then(() => {
                     unlink('media/' + filename + '.jpg', () => {});
                 });
+                browser.close();
             };
             setReminder({
                 number: time,
