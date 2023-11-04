@@ -15,7 +15,6 @@
     "@types/sequelize": "^4.28.16",
     "dotenv": "^16.3.1",
     "fs": "^0.0.1-security",
-    "node-schedule": "^2.1.1",
     "node-telegram-bot-api": "^0.63.0",
     "pg": "^8.11.3",
     "puppeteer": "^21.3.8",

@@ -1,5 +1,3 @@
-import { scheduleJob } from "node-schedule";
-
 export type FrequencyType = 'daily' | 'weekly' | 'once';
 
 export const setReminder = ({ number, frequency, job, isValid }: {
@@ -34,6 +32,10 @@ export const setReminder = ({ number, frequency, job, isValid }: {
             break;
     }
 };
+
+const scheduleJob = (time: Date, job: () => void) => {
+    setTimeout(job, time.getTime() - new Date().getTime());
+}
 
 const getNearestTime = (number: number): Date => {
     const now = new Date();

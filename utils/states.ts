@@ -80,7 +80,8 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         errorMessage: 'Invalid command, here is what you can choose to add:\n'
             + '/start - show start message\n'
             + '/cancel - cancel adding\n'
-            + '/reminder - add a reminder\n',
+            + '/reminder - add a reminder\n'
+            + '/track - add a website tracker',
         allowPlain: false,
     }],
     [STATE.LIST, {
@@ -88,7 +89,8 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         errorMessage: 'Invalid command, here is what you can choose to view:\n'
             + '/start - show start message\n'
             + '/cancel - cancel viewing\n'
-            + '/reminder - view your reminders\n',
+            + '/reminder - view your reminders\n'
+            + '/track - view your website trackers',
         allowPlain: false,
     }],
     [STATE.EDIT, {
@@ -96,7 +98,8 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         errorMessage: 'Invalid command, here is what you can choose to edit:\n'
             + '/start - show start message\n'
             + '/cancel - cancel adding\n'
-            + '/reminder - edit a reminder\n',
+            + '/reminder - edit a reminder\n'
+            + '/track - edit a website tracker',
         allowPlain: false,
     }],
     [STATE.DELETE, {
@@ -104,7 +107,8 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         errorMessage: 'Invalid command, here is what you can choose to delete:\n'
             + '/start - show start message\n'
             + '/cancel - cancel adding\n'
-            + '/reminder - delete a reminder\n',
+            + '/reminder - delete a reminder\n'
+            + '/track - delete a website tracker',
         allowPlain: false,
     }],
     [STATE.REMINDER_START, {
