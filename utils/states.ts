@@ -38,6 +38,19 @@ enum STATE {
     TRACK_DAILY,
     TRACK_WEEKLY,
     TRACK_ONCE,
+
+    TRACK_EDIT,
+    TRACK_EDIT_TYPE,
+    TRACK_EDIT_LINK,
+    TRACK_EDIT_LINK_CONFIRM,
+    TRACK_EDIT_SELECTOR,
+    TRACK_EDIT_INDEX,
+    TRACK_EDIT_SELECTOR_CONFIRM,
+    TRACK_EDIT_CAPTION,
+    TRACK_EDIT_FREQUENCY,
+    TRACK_EDIT_DAILY,
+    TRACK_EDIT_WEEKLY,
+    TRACK_EDIT_ONCE,
 }
 
 type KnownCommandHelper = {
@@ -274,6 +287,95 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         errorMessage: 'Invalid command, here is the current list of available commands for adding a website tracker:\n'
             + '/start - show start message\n'
             + '/cancel - cancel adding a website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_EDIT, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_EDIT_TYPE, {
+        commands: [/^\/start$/, /^\/cancel$/, /^\/link$/, /^\/selector$/, /^\/caption$/, /^\/frequency$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing website tracker\n'
+            + '/link - change the link of the tracker you have chosen\n'
+            + '/selector - change the section of the webpage you want to track\n'
+            + '/caption - change the caption of the tracker you have chosen\n'
+            + '/frequency - change the frequency or timing of the tracker you have chosen',
+        allowPlain: false,
+    }],
+    [STATE.TRACK_EDIT_LINK, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_EDIT_LINK_CONFIRM, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_EDIT_SELECTOR, {
+        commands: [/^\/start$/, /^\/cancel$/, /^\/selector$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing a website tracker:\n'
+            + '/start - show start message\n'
+            + '/selector - more info about query selector\n'
+            + '/cancel - cancel editing website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_EDIT_SELECTOR_CONFIRM, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_EDIT_INDEX, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_EDIT_CAPTION, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_EDIT_FREQUENCY, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_EDIT_DAILY, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_EDIT_WEEKLY, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_EDIT_ONCE, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for editing a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel editing website tracker',
         allowPlain: true,
     }],
 ])

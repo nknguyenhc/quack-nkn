@@ -17,7 +17,7 @@ const startHandler: TextHandler = {
         });
         bot.sendMessage(chatId, 
             'Hello! Welcome to quack-nkn!\n'
-            + 'This bot helps you set reminders for yourself and track websites (coming soon)\n'
+            + 'This bot helps you set reminders for yourself and track websites\n'
             + 'My boss is Nguyen, you can find out more about him here: https://nknguyenhc.github.io/ \n'
             + 'Here is the list of available commands:\n'
             + '/start - show this message\n'
