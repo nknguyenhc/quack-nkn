@@ -665,10 +665,12 @@ const reminderDeleteIndexHandler: PlainHandler = {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_DELETE) {
             const index = Number(msg.text);
-            const isDeleted = ReminderDeleteMemory.deleteReminder(chatId, index - 1);
+            const isDeleted = ReminderDeleteMemory.deleteReminder(chatId, index);
             if (await isDeleted) {
                 UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-                bot.sendMessage(chatId, `Alright, reminder ${index} has been deleted`)
+                bot.sendMessage(chatId, `Alright, reminder ${index} has been deleted.`);
+            } else {
+                bot.sendMessage(chatId, `Index must be an integer between 1 and ${ReminderDeleteMemory.getReminderCount(chatId)}.`);
             }
         }
     },

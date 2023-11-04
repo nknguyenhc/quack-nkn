@@ -260,3 +260,42 @@ export class TrackEditMemory {
         delete TrackEditMemory.#trackers[chatId];
     }
 }
+
+type TrackRemoveType = {
+    trackers: Array<TrackerInfo>,
+};
+
+type TrackRemoveDict = {
+    [key: number]: TrackRemoveType,
+};
+
+export class TrackDeleteMemory {
+    static #trackers: TrackRemoveDict = {};
+
+    static setUser(chatId: number, trackers: Array<TrackerInfo>) {
+        TrackDeleteMemory.#trackers[chatId] = { trackers };
+    }
+
+    static async deleteTracker(chatId: number, index: number) {
+        const { trackers } = TrackDeleteMemory.#trackers[chatId];
+        if (!isNaN(index) && index > 0 && index <= trackers.length) {
+            await Tracker.destroy({
+                where: {
+                    userChatId: String(chatId),
+                    id: trackers[index - 1].id,
+                },
+            });
+            delete TrackDeleteMemory.#trackers[chatId];
+            return true;
+        }
+        return false;
+    }
+
+    static getTrackerCount(chatId: number): number {
+        return TrackDeleteMemory.#trackers[chatId].trackers.length;
+    }
+
+    static deleteUser(chatId: number) {
+        delete TrackDeleteMemory.#trackers[chatId];
+    }
+}

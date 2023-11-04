@@ -170,17 +170,21 @@ export class ReminderDeleteMemory {
 
     static async deleteReminder(chatId: number, index: number) {
         const { reminders } = ReminderDeleteMemory.#reminders[chatId];
-        delete ReminderDeleteMemory.#reminders[chatId];
-        if (!isNaN(index) && index >= 0 && index < reminders.length) {
+        if (!isNaN(index) && index > 0 && index <= reminders.length) {
             await Reminder.destroy({
                 where: {
                     userChatId: String(chatId),
-                    id: reminders[index],
+                    id: reminders[index - 1],
                 },
             });
+            delete ReminderDeleteMemory.#reminders[chatId];
             return true;
         }
         return false;
+    }
+
+    static getReminderCount(chatId: number): number {
+        return ReminderDeleteMemory.#reminders[chatId].reminders.length;
     }
 
     static deleteMemory(chatId: number) {

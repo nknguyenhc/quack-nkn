@@ -51,6 +51,8 @@ enum STATE {
     TRACK_EDIT_DAILY,
     TRACK_EDIT_WEEKLY,
     TRACK_EDIT_ONCE,
+
+    TRACK_DELETE,
 }
 
 type KnownCommandHelper = {
@@ -376,6 +378,13 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         errorMessage: 'Invalid command, here is the current list of available commands for editing a website tracker:\n'
             + '/start - show start message\n'
             + '/cancel - cancel editing website tracker',
+        allowPlain: true,
+    }],
+    [STATE.TRACK_DELETE, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the current list of available commands for deleting a website tracker:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel deleting website tracker',
         allowPlain: true,
     }],
 ])

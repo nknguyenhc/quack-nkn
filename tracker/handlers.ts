@@ -5,7 +5,7 @@ import { launch, ElementHandle, NodeFor } from 'puppeteer';
 import { getRandomString, numberToTime, numberToTimeString, parseDateTime, weeklyNumberToString } from '../utils/primitives';
 import { unlink } from 'fs';
 import { confirmErrorMessage, dailyPoll, frequencyPoll, onceQuestion, weeklyPoll } from './data';
-import { TrackEditMemory, TrackMemory } from './temp';
+import { TrackDeleteMemory, TrackEditMemory, TrackMemory } from './temp';
 import { FrequencyType, setReminder } from '../utils/schedule';
 import { Tracker, TrackerType } from './db';
 import { Model } from 'sequelize';
@@ -1431,6 +1431,47 @@ const trackEditOnceHandler: PlainHandler = {
     },
 };
 
+const trackDeleteHandler: TextHandler = {
+    command: /^\/delete$/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_START) {
+            const trackers = (await Tracker.findAll({
+                where: { userChatId: String(chatId) },
+            }));
+            TrackDeleteMemory.setUser(chatId, trackers.map(tracker => ({
+                id: tracker.dataValues.id,
+                link: tracker.dataValues.address,
+            })));
+            let message = 'Here is your list of trackers:';
+            trackers.forEach((tracker, trackerIndex) => {
+                message += `\n${trackerIndex + 1}. ${trackerDataToString(tracker)}`;
+            });
+            message += `\nWhich tracker do you want to delete? Key in the index of the tracker.`;
+            bot.sendMessage(chatId, message, {
+                parse_mode: "Markdown",
+            });
+            UserStates.setUserState(chatId, UserStates.STATE.TRACK_DELETE);
+        }
+    },
+};
+
+const trackDeleteIndexHandler: PlainHandler = {
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_DELETE) {
+            const index = Number(msg.text);
+            const isDeleted = TrackDeleteMemory.deleteTracker(chatId, index);
+            if (await isDeleted) {
+                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                bot.sendMessage(chatId, `Alright, reminder ${index} has been deleted.`);
+            } else {
+                bot.sendMessage(chatId, `Index must be an integer between 1 and ${TrackDeleteMemory.getTrackerCount(chatId)}.`);
+            }
+        }
+    },
+};
+
 export const trackTextHandlers: Array<TextHandler> = [
     trackHandler,
     trackAddHandler,
@@ -1441,6 +1482,7 @@ export const trackTextHandlers: Array<TextHandler> = [
     trackEditSelectorCommandHandler,
     trackEditCaptionCommandHandler,
     trackEditFrequencyCommandHandler,
+    trackDeleteHandler,
 ];
 
 export const trackPlainHandler: Array<PlainHandler> = [
@@ -1459,6 +1501,7 @@ export const trackPlainHandler: Array<PlainHandler> = [
     trackEditSelectorConfirmHandler,
     trackEditCaptionHandler,
     trackEditOnceHandler,
+    trackDeleteIndexHandler,
 ];
 
 export const trackPollHandler: Array<PollAnswerHandler> = [
