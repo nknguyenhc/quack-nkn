@@ -76,7 +76,7 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         allowPlain: false,
     }],
     [STATE.ADD, {
-        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/],
+        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/, /^\/track$/],
         errorMessage: 'Invalid command, here is what you can choose to add:\n'
             + '/start - show start message\n'
             + '/cancel - cancel adding\n'
@@ -84,7 +84,7 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         allowPlain: false,
     }],
     [STATE.LIST, {
-        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/],
+        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/, /^\/track$/],
         errorMessage: 'Invalid command, here is what you can choose to view:\n'
             + '/start - show start message\n'
             + '/cancel - cancel viewing\n'
@@ -92,7 +92,7 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         allowPlain: false,
     }],
     [STATE.EDIT, {
-        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/],
+        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/, /^\/track$/],
         errorMessage: 'Invalid command, here is what you can choose to edit:\n'
             + '/start - show start message\n'
             + '/cancel - cancel adding\n'
@@ -100,7 +100,7 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         allowPlain: false,
     }],
     [STATE.DELETE, {
-        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/],
+        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/, /^\/track$/],
         errorMessage: 'Invalid command, here is what you can choose to delete:\n'
             + '/start - show start message\n'
             + '/cancel - cancel adding\n'

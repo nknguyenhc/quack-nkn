@@ -53,11 +53,53 @@ const trackAddHandler: TextHandler = {
     },
 };
 
+const addTrackHandler: TextHandler = {
+    command: /^\/track$/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.ADD) {
+            UserStates.setUserState(chatId, UserStates.STATE.TRACK_ADD);
+            bot.sendMessage(chatId, "Alright, give me the address of the website that you wish to track.\n"
+                + "In your message, send the address of the website only. Do not add any extra text.\n"
+                + "Please take note that I can only track websites that are publicly available and is not blocked by Chrome "
+                + "(i.e. does not require logging in, no malicious content, no onion website)");
+        }
+    },
+};
+
 const trackListHandler: TextHandler = {
     command: /^\/list$/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_START) {
+            const allTrackers = await Tracker.findAll({
+                where: {
+                    userChatId: String(chatId),
+                },
+            });
+            if (allTrackers.length === 0) {
+                bot.sendMessage(chatId, "You have no website trackers yet.");
+                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                return;
+            }
+
+            let message = 'Alright, here is your list of website trackers:';
+            allTrackers.forEach((tracker, trackerIndex) => {
+                message += `\n${trackerIndex + 1}. ${trackerDataToString(tracker)}`;
+            });
+            bot.sendMessage(chatId, message, {
+                parse_mode: "Markdown",
+            });
+            UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+        }
+    },
+};
+
+const listTrackHandler: TextHandler = {
+    command: /^\/track$/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.LIST) {
             const allTrackers = await Tracker.findAll({
                 where: {
                     userChatId: String(chatId),
@@ -635,6 +677,39 @@ const trackEditHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_START) {
+            const allTrackers = await Tracker.findAll({
+                where: {
+                    userChatId: String(chatId),
+                },
+            });
+            if (allTrackers.length === 0) {
+                bot.sendMessage(chatId, "You have no website trackers to edit yet.");
+                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                return;
+            }
+
+            TrackEditMemory.setUser(chatId, allTrackers.map(tracker => ({
+                id: tracker.dataValues.id,
+                link: tracker.dataValues.address,
+            })));
+            let message = 'Here is your list of website trackers:';
+            allTrackers.forEach((tracker, trackerIndex) => {
+                message += `\n${trackerIndex + 1}. ${trackerDataToString(tracker)}`;
+            });
+            message += '\nWhich website tracker do you want to edit? Key in the index of the tracker.';
+            bot.sendMessage(chatId, message, {
+                parse_mode: "Markdown",
+            });
+            UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT);
+        }
+    },
+};
+
+const editTrackHandler: TextHandler = {
+    command: /^\/track$/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.EDIT) {
             const allTrackers = await Tracker.findAll({
                 where: {
                     userChatId: String(chatId),
@@ -1456,6 +1531,31 @@ const trackDeleteHandler: TextHandler = {
     },
 };
 
+const deleteTrackHandler: TextHandler = {
+    command: /^\/track$/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.DELETE) {
+            const trackers = (await Tracker.findAll({
+                where: { userChatId: String(chatId) },
+            }));
+            TrackDeleteMemory.setUser(chatId, trackers.map(tracker => ({
+                id: tracker.dataValues.id,
+                link: tracker.dataValues.address,
+            })));
+            let message = 'Here is your list of trackers:';
+            trackers.forEach((tracker, trackerIndex) => {
+                message += `\n${trackerIndex + 1}. ${trackerDataToString(tracker)}`;
+            });
+            message += `\nWhich tracker do you want to delete? Key in the index of the tracker.`;
+            bot.sendMessage(chatId, message, {
+                parse_mode: "Markdown",
+            });
+            UserStates.setUserState(chatId, UserStates.STATE.TRACK_DELETE);
+        }
+    },
+};
+
 const trackDeleteIndexHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
@@ -1475,14 +1575,18 @@ const trackDeleteIndexHandler: PlainHandler = {
 export const trackTextHandlers: Array<TextHandler> = [
     trackHandler,
     trackAddHandler,
+    addTrackHandler,
     querySelectorInfoHandler,
     trackListHandler,
+    listTrackHandler,
     trackEditHandler,
+    editTrackHandler,
     trackEditLinkCommandHandler,
     trackEditSelectorCommandHandler,
     trackEditCaptionCommandHandler,
     trackEditFrequencyCommandHandler,
     trackDeleteHandler,
+    deleteTrackHandler,
 ];
 
 export const trackPlainHandler: Array<PlainHandler> = [

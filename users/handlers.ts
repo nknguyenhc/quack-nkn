@@ -61,7 +61,8 @@ const addHandler: TextHandler = {
         if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
             UserStates.setUserState(chatId, UserStates.STATE.ADD);
             bot.sendMessage(chatId, 'What do you wish to add?'
-                    + '\n/reminder - add a new reminder');
+                    + '\n/reminder - add a new reminder'
+                    + '\n/track - add a new website tracker');
         }
     },
 };
@@ -73,7 +74,8 @@ const listHandler: TextHandler = {
         if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
             UserStates.setUserState(chatId, UserStates.STATE.LIST);
             bot.sendMessage(chatId, 'What do you wish to view?'
-                    + '\n/reminder - view your list of reminders');
+                    + '\n/reminder - view your list of reminders'
+                    + '\n/track - view your list of website trackers');
         }
     },
 };
@@ -85,7 +87,8 @@ const editHandler: TextHandler = {
         if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
             UserStates.setUserState(chatId, UserStates.STATE.EDIT);
             bot.sendMessage(chatId, 'What do you wish to edit?'
-                    + '\n/reminder - edit one of your reminders');
+                    + '\n/reminder - edit one of your reminders'
+                    + '\n/track - edit one of your trackers');
         }
     }
 }
@@ -97,7 +100,8 @@ const deleteHandler: TextHandler = {
         if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
             UserStates.setUserState(chatId, UserStates.STATE.DELETE);
             bot.sendMessage(chatId, 'What do you wish to delete?'
-                    + '\n/reminder - delete one of your reminders');
+                    + '\n/reminder - delete one of your reminders'
+                    + '\n/track - delete one of your website trackers');
         }
     }
 }
