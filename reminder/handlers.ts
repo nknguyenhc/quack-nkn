@@ -4,9 +4,9 @@ import { TextHandler, PlainHandler, PollAnswerHandler } from '../utils/types';
 import UserStates from '../utils/states';
 import { Reminder } from "./db";
 import { dailyPoll, frequencyPoll, onceQuestion, typePoll, weeklyPoll } from './data';
-import { numberToTime, parseDateTime, weeklyNumberToString } from "../utils/primitives";
-import { FrequencyType, setReminder } from "../utils/schedule";
-import { addReminder, addReminderWithNumber, editReminder, editReminderWithNumber, listingAllReminders, recordFrequency, reminderDataToString } from "./functions";
+import { numberToTime, weeklyNumberToString } from "../utils/primitives";
+import { setReminder } from "../utils/schedule";
+import { addReminder, addReminderWithNumber, checkDateString, editReminder, editReminderWithNumber, listingAllReminders, recordFrequency } from "./functions";
 
 const remindStartHandler: TextHandler = {
     command: /^\/reminder$/,
@@ -221,17 +221,12 @@ const reminderOnceHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_ONCE) {
-            const date: Date | undefined = parseDateTime(msg.text!);
-            if (!date || isNaN(date.getTime())) {
-                bot.sendMessage(chatId, "Oops, I do not understand your datetime.");
-                return;
-            }
-            if (date < new Date()) {
-                bot.sendMessage(chatId, "Oops, you cannot set reminder for something in the past.");
-                return;
-            }
-            if (date > new Date(2030, 11, 31)) {
-                bot.sendMessage(chatId, "Oops, you cannot set reminder for something beyond the year of 2030.");
+            const date = checkDateString({
+                string: msg.text!,
+                bot: bot,
+                chatId: chatId,
+            });
+            if (!date) {
                 return;
             }
             addReminderWithNumber({
@@ -411,17 +406,12 @@ const reminderEditOnceHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_ONCE) {
-            const date = parseDateTime(msg.text!);
-            if (!date || isNaN(date.getTime())) {
-                bot.sendMessage(chatId, "Oops, I do not understand your datetime.");
-                return;
-            }
-            if (date < new Date()) {
-                bot.sendMessage(chatId, "Oops, you cannot send reminder for something in the past.");
-                return;
-            }
-            if (date > new Date(2030, 11, 31)) {
-                bot.sendMessage(chatId, "Oops, you cannot send reminder for something beyond the year of 2030.");
+            const date = checkDateString({
+                string: msg.text!,
+                bot: bot,
+                chatId: chatId,
+            });
+            if (!date) {
                 return;
             }
             editReminderWithNumber({

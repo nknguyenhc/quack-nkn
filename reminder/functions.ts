@@ -1,5 +1,5 @@
 import { Reminder, ReminderType } from "./db";
-import { numberToTimeString } from "../utils/primitives";
+import { numberToTimeString, parseDateTime } from "../utils/primitives";
 import { Model } from "sequelize";
 import TelegramBot, { CallbackQuery } from "node-telegram-bot-api";
 import UserStates from "../utils/states";
@@ -7,7 +7,7 @@ import { FrequencyType, setReminder } from "../utils/schedule";
 import { dailyPoll, onceQuestion, weeklyPoll } from "./data";
 import { ReminderEditMemory, ReminderMemory } from "./temp";
 
-export const reminderDataToString = (reminder: Model<ReminderType, ReminderType>): string => {
+const reminderDataToString = (reminder: Model<ReminderType, ReminderType>): string => {
     return `${
         reminder.dataValues.content
     } (${
@@ -226,4 +226,29 @@ export const editReminderWithNumber = async ({
     const [type, changed] = ReminderEditMemory.getReminder(chatId);
     UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
     bot.sendMessage(chatId, `Alright, I have changed the ${type} of the reminder to ${changed}`);
+};
+
+export const checkDateString = ({
+    string,
+    bot,
+    chatId,
+}: {
+    string: string,
+    bot: TelegramBot,
+    chatId: number,
+}): Date | undefined => {
+    const date = parseDateTime(string);
+    if (!date || isNaN(date.getTime())) {
+        bot.sendMessage(chatId, "Oops, I do not understand your datetime.");
+        return;
+    }
+    if (date < new Date()) {
+        bot.sendMessage(chatId, "Oops, you cannot send reminder for something in the past.");
+        return;
+    }
+    if (date > new Date(2030, 11, 31)) {
+        bot.sendMessage(chatId, "Oops, you cannot send reminder for something beyond the year of 2030.");
+        return;
+    }
+    return date;
 };
