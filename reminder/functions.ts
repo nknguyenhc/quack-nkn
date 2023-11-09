@@ -191,27 +191,21 @@ export const editReminder = ({
             message_id: messageId,
         },
     );
+    ReminderEditMemory.setTime(chatId, selectedOption);
     editReminderWithNumber({
-        number: selectedOption,
         bot: bot,
         chatId: chatId,
-        frequency: frequency,
     });
 };
 
 export const editReminderWithNumber = async ({
-    number,
     bot,
     chatId,
-    frequency,
 }: {
-    number: number,
     bot: TelegramBot,
     chatId: number,
-    frequency: FrequencyType,
 }) => {
-    ReminderEditMemory.setTime(chatId, number);
-    const { id, content, time } = await ReminderEditMemory.build(chatId);
+    const { id, content, frequency, time } = await ReminderEditMemory.build(chatId);
     const isValid = () => Reminder.findOne({
         where: { id: id },
     }).then(reminder => reminder !== null);

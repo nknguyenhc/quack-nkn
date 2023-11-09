@@ -1,29 +1,10 @@
 import TelegramBot, { CallbackQuery, Message } from 'node-telegram-bot-api';
 import { PlainHandler, PollAnswerHandler, TextHandler } from '../utils/types';
 import UserStates from '../utils/states';
-import { ElementHandle, NodeFor } from 'puppeteer';
-import { getRandomString, numberToTime, numberToTimeString, parseDateTime, weeklyNumberToString } from '../utils/primitives';
-import { unlink } from 'fs';
-import { confirmErrorMessage, dailyPoll, frequencyPoll, onceQuestion, weeklyPoll } from './data';
+import { numberToTime, weeklyNumberToString } from '../utils/primitives';
+import { confirmErrorMessage, dailyPoll, frequencyPoll, weeklyPoll } from './data';
 import { TrackDeleteMemory, TrackEditMemory, TrackMemory } from './temp';
-import { FrequencyType, setReminder } from '../utils/schedule';
-import { Tracker, TrackerType } from './db';
-import { Model } from 'sequelize';
-import { launchBrowserAndPage } from './functions';
-
-const trackerDataToString = (tracker: Model<TrackerType, TrackerType>): string => {
-    return `\`${
-        tracker.dataValues.address
-    }\` (${
-        tracker.dataValues.frequency
-    }) ${
-        numberToTimeString(tracker.dataValues.time, tracker.dataValues.frequency)
-    } (selector: ${
-        tracker.dataValues.selector
-    }, caption: ${
-        tracker.dataValues.caption
-    })`;
-};
+import { buildVisitJob, checkDateString, frequencyHandler, listingAllTrackers, setEditedVisitJob, setVisitJob, trackerDataToString, visitLinkAndScreenshot, visitLinkAndScrollToSelector, visitLinkAndScrollToSelectorIndex } from './functions';
 
 const trackHandler: TextHandler = {
     command: /^\/track$/,
@@ -73,25 +54,12 @@ const trackListHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_START) {
-            const allTrackers = await Tracker.findAll({
-                where: {
-                    userChatId: String(chatId),
-                },
-            });
-            if (allTrackers.length === 0) {
-                bot.sendMessage(chatId, "You have no website trackers yet.");
+            if (await listingAllTrackers({
+                bot: bot,
+                chatId: chatId,
+            })) {
                 UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-                return;
             }
-
-            let message = 'Alright, here is your list of website trackers:';
-            allTrackers.forEach((tracker, trackerIndex) => {
-                message += `\n${trackerIndex + 1}. ${trackerDataToString(tracker)}`;
-            });
-            bot.sendMessage(chatId, message, {
-                parse_mode: "Markdown",
-            });
-            UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
         }
     },
 };
@@ -101,25 +69,12 @@ const listTrackHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.LIST) {
-            const allTrackers = await Tracker.findAll({
-                where: {
-                    userChatId: String(chatId),
-                },
-            });
-            if (allTrackers.length === 0) {
-                bot.sendMessage(chatId, "You have no website trackers yet.");
+            if (await listingAllTrackers({
+                bot: bot,
+                chatId: chatId,
+            })) {
                 UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-                return;
             }
-
-            let message = 'Alright, here is your list of website trackers:';
-            allTrackers.forEach((tracker, trackerIndex) => {
-                message += `\n${trackerIndex + 1}. ${trackerDataToString(tracker)}`;
-            });
-            bot.sendMessage(chatId, message, {
-                parse_mode: "Markdown",
-            });
-            UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
         }
     },
 };
@@ -132,28 +87,14 @@ const trackAddressHandler: PlainHandler = {
             bot.sendMessage(chatId, "Alright, give me a second.");
             TrackMemory.addUser(chatId);
             TrackMemory.setLink(chatId, link);
-
-            const { browser, page } = await launchBrowserAndPage();
-
-            try {
-                await page.goto(link);
-            } catch (e) {
-                bot.sendMessage(chatId, "Oops, the URL you sent me seems to be invalid, please send me the correct link.");
-                return;
-            }
-
-            const filename = getRandomString();
-            await page.screenshot({
-                path: './media/' + filename + '.jpg',
-            });
-            browser.close();
-
-            bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
+            visitLinkAndScreenshot({
+                link: link,
+                bot: bot,
+                chatId: chatId,
+                invalidHandler: () => bot.sendMessage(chatId, "Oops, the URL you sent me seems to be invalid, please send me the correct link."),
                 caption: "Is this the site that you want to track?",
-            }).then(() => {
-                unlink('media/' + filename + '.jpg', () => {});
+                turnNextState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_CONFIRM),
             });
-            UserStates.setUserState(chatId, UserStates.STATE.TRACK_CONFIRM);
         }
     },
 };
@@ -189,11 +130,11 @@ const querySelectorInfoHandler: TextHandler = {
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_SELECTOR
                 || UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_SELECTOR) {
             bot.sendMessage(chatId, "The query selector must be such that when I run `document.querySelectorAll(yourQuerySelector)` "
-                    + "in the javascript console on the page, the HTML element should be in the result list. "
-                    + "For example, if you give me \"div.box\", I will find all HTML div elements with class name \"box\", "
-                    + "and your element must be in the list.", {
-                        parse_mode: "Markdown",
-                    });
+                + "in the javascript console on the page, the HTML element should be in the result list. "
+                + "For example, if you give me \"div.box\", I will find all HTML div elements with class name \"box\", "
+                + "and your element must be in the list.", {
+                    parse_mode: "Markdown",
+                });
         }
     }
 }
@@ -214,71 +155,24 @@ const trackSelectorHandler: PlainHandler = {
             
             bot.sendMessage(chatId, "Alright, give me a second.");
             const link = TrackMemory.getLink(chatId);
-            const { browser, page } = await launchBrowserAndPage();
-            
-            try {
-                await page.goto(link);
-            } catch (e) {
-                bot.sendMessage(chatId, "Oops, looks like the page has just been removed. "
+            visitLinkAndScrollToSelector({
+                link: link,
+                bot: bot,
+                chatId: chatId,
+                invalidHandler: () => {
+                    bot.sendMessage(chatId, "Oops, looks like the page has just been removed. "
                         + "Please try adding another tracker.");
-                TrackMemory.deleteUser(chatId);
-                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-                return;
-            }
-
-            const tryNumber = Number(selector);
-            if (!isNaN(tryNumber)) {
-                await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
-                const filename = getRandomString();
-                await page.screenshot({
-                    path: './media/' + filename + '.jpg',
-                });
-                TrackMemory.setPixelCount(chatId, tryNumber);
-                setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR_CONFIRM), 100);
-                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
-                    caption: "Is this the section you want to track?",
-                }).then(() => {
-                    unlink('media/' + filename + ".jpg", () => {});
-                });
-                browser.close();
-                return;
-            }
-
-            const elements = await page.$$(selector);
-
-            if (elements.length === 1) {
-                await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
-                    element.scrollIntoView();
-                }, elements[0]);
-                await page.evaluate('window.scrollBy(0, -150)');
-                const filename = getRandomString();
-                await page.screenshot({
-                    path: './media/' + filename + '.jpg',
-                });
-                TrackMemory.setSelector(chatId, selector);
-                setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR_CONFIRM), 100);
-                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
-                    caption: "Is this the section you want to track?",
-                }).then(() => {
-                    unlink('media/' + filename + '.jpg', () => {});
-                });
-            } else if (elements.length > 1) {
-                TrackMemory.setSelector(chatId, selector);
-                TrackMemory.setSelectorCount(chatId, elements.length);
-                UserStates.setUserState(chatId, UserStates.STATE.TRACK_INDEX);
-                bot.sendMessage(chatId, "Looks like there are many HTML elements matching your query. "
-                        + "What is the index of the element? You can obtain the index of the element "
-                        + `by running \`document.querySelectorAll(${selector})\` in browser `
-                        + "and obtain the index of the item in the result list. "
-                        + "Please give me zero-based index.", {
-                            parse_mode: "Markdown",
-                        });
-            } else {
-                bot.sendMessage(chatId, "I did not manage to find any HTML element with your selector. "
-                        + "Please send me the correct selector, or the number of pixels to scroll down.");
-            }
-
-            browser.close();
+                    TrackMemory.deleteUser(chatId);
+                    UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                },
+                selector: selector,
+                caption: "Is this the section you want to track?",
+                setPixelCount: TrackMemory.setPixelCount,
+                setSelector: TrackMemory.setSelector,
+                setSelectorCount: TrackMemory.setSelectorCount,
+                toConfirmState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR_CONFIRM),
+                toIndexState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_INDEX),
+            });
         }
     },
 };
@@ -287,54 +181,22 @@ const trackSelectorIndexHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_INDEX) {
-            const index = Number(msg.text);
-            const range = TrackMemory.getSelectorCount(chatId);
-            if (isNaN(index) || index >= range || index < 0) {
-                bot.sendMessage(chatId, `Invalid index, index should be between 0 and ${range - 1} inclusive.`);
-                return;
-            }
-
-            TrackMemory.setIndex(chatId, index);
-            const selector = TrackMemory.getSelector(chatId);
-            const link = TrackMemory.getLink(chatId);
-            const { browser, page } = await launchBrowserAndPage();
-            
-            try {
-                await page.goto(link);
-            } catch (e) {
-                bot.sendMessage(chatId, "Oops, looks like the page has just been removed. "
-                        + "Please try adding another tracker.");
-                TrackMemory.deleteUser(chatId);
-                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-                return;
-            }
-
-            const elements = await page.$$(selector);
-
-            if (elements.length < index) {
-                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-                TrackMemory.deleteUser(chatId);
-                bot.sendMessage(chatId, "Oops, the page appears to have changed as we are talking. "
-                        + "Please start over again.");
-                browser.close();
-                return;
-            }
-
-            await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
-                element.scrollIntoView();
-            }, elements[index]);
-            await page.evaluate('window.scrollBy(0, -150)');
-            const filename = getRandomString();
-            await page.screenshot({
-                path: './media/' + filename + '.jpg',
-            });
-            browser.close();
-
-            setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR_CONFIRM), 100);
-            bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
+            visitLinkAndScrollToSelectorIndex({
+                indexString: msg.text!,
+                bot: bot,
+                chatId: chatId,
+                invalidHandler: () => {
+                    bot.sendMessage(chatId, "Oops, looks like the page has just been removed. Please try adding another tracker.");
+                    TrackMemory.deleteUser(chatId);
+                    UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                },
                 caption: "Is this the section you want to track?",
-            }).then(() => {
-                unlink('media/' + filename + '.jpg', () => {});
+                getSelectorCount: TrackMemory.getSelectorCount,
+                deleteUser: TrackMemory.deleteUser,
+                setIndex: TrackMemory.setIndex,
+                getSelector: TrackMemory.getSelector,
+                getLink: TrackMemory.getLink,
+                toConfirmState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR_CONFIRM),
             });
         }
     },
@@ -381,46 +243,15 @@ const trackFrequencyHandler: PollAnswerHandler = {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_FREQUENCY
                 && query.message!.text === frequencyPoll.question) {
-            const messageId = query.message!.message_id;
-            const selectedOption: FrequencyType = query.data as FrequencyType;
-            TrackMemory.setFrequency(chatId, selectedOption);
-
-            bot.editMessageText(
-                `Alright, I will send you screenshots ${selectedOption}`,
-                {
-                    chat_id: chatId,
-                    message_id: messageId,
-                },
-            );
-
-            switch (selectedOption) {
-                case 'daily':
-                    UserStates.setUserState(chatId, UserStates.STATE.TRACK_DAILY);
-                    bot.sendMessage(chatId, dailyPoll.question, {
-                        reply_markup: {
-                            inline_keyboard: dailyPoll.options,
-                        },
-                    }).then(msg => {
-                        UserStates.setUserQuestionId(chatId, msg.message_id);
-                    });
-                    break;
-                case 'weekly':
-                    UserStates.setUserState(chatId, UserStates.STATE.TRACK_WEEKLY);
-                    bot.sendMessage(chatId, weeklyPoll.question, {
-                        reply_markup: {
-                            inline_keyboard: weeklyPoll.options,
-                        },
-                    }).then(msg => {
-                        UserStates.setUserQuestionId(chatId, msg.message_id);
-                    });
-                    break;
-                case 'once':
-                    UserStates.setUserState(chatId, UserStates.STATE.TRACK_ONCE);
-                    bot.sendMessage(chatId, onceQuestion).then(msg => {
-                        UserStates.setUserQuestionId(chatId, msg.message_id);
-                    });
-                    break;
-            }
+            frequencyHandler({
+                bot: bot,
+                chatId: chatId,
+                query: query,
+                toDailyState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_DAILY),
+                toWeeklyState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_WEEKLY),
+                toOnceState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_ONCE),
+                setFrequency: TrackMemory.setFrequency,
+            });
         }
     },
 };
@@ -430,72 +261,14 @@ const trackDailyHandler: PollAnswerHandler = {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_DAILY
                 && query.message!.text === dailyPoll.question) {
-            const messageId = query.message!.message_id;
-            const selectedOption = Number(query.data);
-            TrackMemory.setTime(chatId, selectedOption);
-
-            bot.editMessageText(
-                `You selected: ${numberToTime(selectedOption)}`,
-                {
-                    chat_id: chatId,
-                    message_id: messageId,
-                },
-            );
-
-            const { id, link, selector, index, caption } = await TrackMemory.build(chatId);
-            const isValid = () => Tracker.findOne({
-                where: {
-                    id: id,
-                },
-            }).then(tracker => tracker !== null);
-            const job = async () => {
-                const { browser, page } = await launchBrowserAndPage();
-                
-                try {
-                    await page.goto(link);
-                } catch (e) {
-                    bot.sendMessage(chatId, `Oops, looks like the page at ${link} has been removed.`);
-                    browser.close();
-                    return;
-                }
-
-                const tryNumber = Number(selector);
-                if (!isNaN(tryNumber)) {
-                    await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
-                } else {
-                    const elements = await page.$$(selector);
-                    if (elements.length >= 1) {
-                        const element = index && index < elements.length ? elements[index] : elements[0];
-                        await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
-                            element.scrollIntoView();
-                        }, element);
-                        await page.evaluate('window.scrollBy(0, -150)');
-                    }
-                }
-
-                const filename = getRandomString();
-                await page.screenshot({
-                    path: './media/' + filename + '.jpg',
-                });
-                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
-                    caption: caption,
-                }).then(() => {
-                    unlink('media/' + filename + '.jpg', () => {});
-                });
-                browser.close();
-                return;
-            };
-            setReminder({
-                number: selectedOption,
+            await setVisitJob({
+                query: query,
+                bot: bot,
+                chatId: chatId,
                 frequency: 'daily',
-                job: job,
-                isValid: isValid,
+                text: selectedOption => `You selected: ${numberToTime(selectedOption)}`,
             });
-            
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-            bot.sendMessage(chatId, `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId)}`, {
-                parse_mode: "Markdown",
-            });
         }
     },
 };
@@ -505,72 +278,14 @@ const trackWeeklyHandler: PollAnswerHandler = {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_WEEKLY
                 && query.message!.text === weeklyPoll.question) {
-            const messageId = query.message!.message_id;
-            const selectedOption = Number(query.data);
-            TrackMemory.setTime(chatId, selectedOption);
-
-            bot.editMessageText(
-                `You selected: ${weeklyNumberToString(selectedOption)}`,
-                {
-                    chat_id: chatId,
-                    message_id: messageId,
-                },
-            );
-
-            const { id, link, selector, index, caption } = await TrackMemory.build(chatId);
-            const isValid = () => Tracker.findOne({
-                where: {
-                    id: id,
-                },
-            }).then(tracker => tracker !== null);
-            const job = async () => {
-                const { browser, page } = await launchBrowserAndPage();
-                
-                try {
-                    await page.goto(link);
-                } catch (e) {
-                    bot.sendMessage(chatId, `Oops, looks like the page at ${link} has been removed.`);
-                    browser.close();
-                    return;
-                }
-
-                const tryNumber = Number(selector);
-                if (!isNaN(tryNumber)) {
-                    await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
-                } else {
-                    const elements = await page.$$(selector);
-                    if (elements.length >= 1) {
-                        const element = index && index < elements.length ? elements[index] : elements[0];
-                        await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
-                            element.scrollIntoView();
-                        }, element);
-                        await page.evaluate('window.scrollBy(0, -150)');
-                    }
-                }
-
-                const filename = getRandomString();
-                await page.screenshot({
-                    path: './media/' + filename + '.jpg',
-                });
-                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
-                    caption: caption,
-                }).then(() => {
-                    unlink('media/' + filename + '.jpg', () => {});
-                });
-                browser.close();
-                return;
-            };
-            setReminder({
-                number: selectedOption,
+            await setVisitJob({
+                query: query,
+                bot: bot,
+                chatId: chatId,
                 frequency: 'weekly',
-                job: job,
-                isValid: isValid,
+                text: selectedOption => `You selected: ${weeklyNumberToString(selectedOption)}`,
             });
-
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-            bot.sendMessage(chatId, `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId)}`, {
-                parse_mode: "Markdown",
-            });
         }
     },
 };
@@ -579,75 +294,29 @@ const trackOnceHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_ONCE) {
-            const date: Date | undefined = parseDateTime(msg.text!);
-            if (!date || isNaN(date.getTime())) {
-                bot.sendMessage(chatId, "Oops, I do not understand your datetime.");
-                return;
-            }
-            if (date < new Date()) {
-                bot.sendMessage(chatId, "Oops, you cannot set website tracker for some time in the past.");
-                return;
-            }
-            if (date > new Date(2030, 11, 31)) {
-                bot.sendMessage(chatId, "Oops, you cannot set website tracker for some time beyond the year of 2030.");
+            const date = checkDateString({
+                string: msg.text!,
+                bot: bot,
+                chatId: chatId,
+            });
+            if (!date) {
                 return;
             }
             TrackMemory.setTime(chatId, date.getTime() / 1000);
-
             const { id, link, selector, index, caption } = await TrackMemory.build(chatId);
-            const isValid = () => Tracker.findOne({
-                where: {
-                    id: id,
-                },
-            }).then(tracker => tracker !== null);
-            const job = async () => {
-                const { browser, page } = await launchBrowserAndPage();
-                
-                try {
-                    await page.goto(link);
-                } catch (e) {
-                    bot.sendMessage(chatId, `Oops, looks like the page at ${link} has been removed.`);
-                    browser.close();
-                    return;
-                }
-
-                const tryNumber = Number(selector);
-                if (!isNaN(tryNumber)) {
-                    await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
-                } else {
-                    const elements = await page.$$(selector);
-                    if (elements.length >= 1) {
-                        const element = index && index < elements.length ? elements[index] : elements[0];
-                        await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
-                            element.scrollIntoView();
-                        }, element);
-                        await page.evaluate('window.scrollBy(0, -150)');
-                    }
-                }
-
-                const filename = getRandomString();
-                await page.screenshot({
-                    path: './media/' + filename + '.jpg',
-                });
-                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
-                    caption: caption,
-                }).then(() => {
-                    unlink('media/' + filename + '.jpg', () => {});
-                });
-                browser.close();
-                return;
-            };
-            setReminder({
+            await buildVisitJob({
+                bot: bot,
+                chatId: chatId,
+                id: id,
+                link: link,
+                selector: selector,
+                index: index,
+                caption: caption,
                 number: date.getTime()/ 1000,
                 frequency: 'once',
-                job: job,
-                isValid: isValid,
+                feedback: () => `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId)}`,
             });
-
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-            bot.sendMessage(chatId, `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId)}`, {
-                parse_mode: "Markdown",
-            });
         }
     },
 };
@@ -657,30 +326,18 @@ const trackEditHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_START) {
-            const allTrackers = await Tracker.findAll({
-                where: {
-                    userChatId: String(chatId),
-                },
+            const isNonEmptyList = await listingAllTrackers({
+                bot: bot,
+                chatId: chatId,
+                tempSetter: (allTrackers) => TrackEditMemory.setUser(chatId, allTrackers.map(tracker => ({
+                    id: tracker.dataValues.id,
+                    link: tracker.dataValues.address,
+                }))),
+                lastNote: "Which website tracker do you want to edit? Key in the index of the tracker.",
             });
-            if (allTrackers.length === 0) {
-                bot.sendMessage(chatId, "You have no website trackers to edit yet.");
-                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-                return;
+            if (isNonEmptyList) {
+                UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT);
             }
-
-            TrackEditMemory.setUser(chatId, allTrackers.map(tracker => ({
-                id: tracker.dataValues.id,
-                link: tracker.dataValues.address,
-            })));
-            let message = 'Here is your list of website trackers:';
-            allTrackers.forEach((tracker, trackerIndex) => {
-                message += `\n${trackerIndex + 1}. ${trackerDataToString(tracker)}`;
-            });
-            message += '\nWhich website tracker do you want to edit? Key in the index of the tracker.';
-            bot.sendMessage(chatId, message, {
-                parse_mode: "Markdown",
-            });
-            UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT);
         }
     },
 };
@@ -690,30 +347,18 @@ const editTrackHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.EDIT) {
-            const allTrackers = await Tracker.findAll({
-                where: {
-                    userChatId: String(chatId),
-                },
+            const isNonEmptyList = await listingAllTrackers({
+                bot: bot,
+                chatId: chatId,
+                tempSetter: (allTrackers) => TrackEditMemory.setUser(chatId, allTrackers.map(tracker => ({
+                    id: tracker.dataValues.id,
+                    link: tracker.dataValues.address,
+                }))),
+                lastNote: "Which website tracker do you want to edit? Key in the index of the tracker.",
             });
-            if (allTrackers.length === 0) {
-                bot.sendMessage(chatId, "You have no website trackers to edit yet.");
-                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-                return;
+            if (isNonEmptyList) {
+                UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT);
             }
-
-            TrackEditMemory.setUser(chatId, allTrackers.map(tracker => ({
-                id: tracker.dataValues.id,
-                link: tracker.dataValues.address,
-            })));
-            let message = 'Here is your list of website trackers:';
-            allTrackers.forEach((tracker, trackerIndex) => {
-                message += `\n${trackerIndex + 1}. ${trackerDataToString(tracker)}`;
-            });
-            message += '\nWhich website tracker do you want to edit? Key in the index of the tracker.';
-            bot.sendMessage(chatId, message, {
-                parse_mode: "Markdown",
-            });
-            UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT);
         }
     },
 };
@@ -758,28 +403,14 @@ const trackEditLinkHandler: PlainHandler = {
             const link = msg.text!;
             bot.sendMessage(chatId, 'Alright, give me a second.');
             TrackEditMemory.setLink(chatId, link);
-
-            const { browser, page } = await launchBrowserAndPage();
-
-            try {
-                await page.goto(link);
-            } catch (e) {
-                bot.sendMessage(chatId, "Oops, the URL you sent me seems to be invalid, plese send me the correct link.");
-                return;
-            }
-
-            const filename = getRandomString();
-            await page.screenshot({
-                path: './media/' + filename + '.jpg',
-            });
-            browser.close();
-
-            bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
+            visitLinkAndScreenshot({
+                link: link,
+                bot: bot,
+                chatId: chatId,
+                invalidHandler: () => bot.sendMessage(chatId, "Oops, the URL you sent me seems to be invalid, plese send me the correct link."),
                 caption: "Is this the new site that you want to track?",
-            }).then(() => {
-                unlink('media/' + filename + '.jpg', () => {});
+                turnNextState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_LINK_CONFIRM),
             });
-            UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_LINK_CONFIRM);
         }
     },
 };
@@ -833,130 +464,41 @@ const trackEditSelectorHandler: PlainHandler = {
                 TrackEditMemory.setPixelCount(chatId, 0);
                 const tracker = await TrackEditMemory.build(chatId);
                 const { id, address, selector, selectorIndex, caption, frequency, time } = tracker.dataValues;
-                const isValid = () => Tracker.findOne({
-                    where: {
-                        id: id,
-                    },
-                }).then(tracker => tracker !== null);
-                const job = async () => {
-                    const { browser, page } = await launchBrowserAndPage();
-
-                    try {
-                        await page.goto(address);
-                    } catch (e) {
-                        bot.sendMessage(chatId, `Oops, looks like that page at ${address} has been removed.`);
-                        browser.close();
-                        return;
-                    }
-
-                    const tryNumber = Number(selector);
-                    if (!isNaN(tryNumber)) {
-                        await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
-                    } else {
-                        const elements = await page.$$(selector);
-                        if (elements.length >= 1) {
-                            const element = selectorIndex && selectorIndex < elements.length ? elements[selectorIndex] : elements[0];
-                            await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
-                                element.scrollIntoView();
-                            }, element);
-                            await page.evaluate('window.scrollBy(0, -150)');
-                        }
-                    }
-
-                    const filename = getRandomString();
-                    await page.screenshot({
-                        path: './media/' + filename + '.jpg',
-                    });
-                    bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
-                        caption: caption,
-                    }).then(() => {
-                        unlink('media/' + filename + '.jpg', () => {});
-                    });
-                    browser.close();
-                };
-                setReminder({
+                await buildVisitJob({
+                    bot: bot,
+                    chatId: chatId,
+                    id: id,
+                    link: address,
+                    selector: selector,
+                    index: selectorIndex,
+                    caption: caption,
                     number: time,
                     frequency: frequency,
-                    job: job,
-                    isValid: isValid,
+                    feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`,
                 });
-
                 setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.NORMAL), 100);
-                bot.sendMessage(chatId, "Ok, I will track the website at the top.\n"
-                    + `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`, {
-                        parse_mode: "Markdown",
-                    });
                 return;
             }
 
             bot.sendMessage(chatId, "Alright, give me a second.");
             const link = TrackEditMemory.getLink(chatId);
-            const { browser, page } = await launchBrowserAndPage();
-
-            try {
-                await page.goto(link);
-            } catch (e) {
-                TrackEditMemory.deleteUser(chatId);
-                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-                bot.sendMessage(chatId, "Oops, looks like the page has just been removed. "
-                    + "Operation cancelled.");
-                browser.close();
-                return;
-            }
-
-            const tryNumber = Number(selector);
-            if (!isNaN(tryNumber)) {
-                await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
-                const filename = getRandomString();
-                await page.screenshot({
-                    path: './media/' + filename + '.jpg',
-                });
-                TrackEditMemory.setPixelCount(chatId, tryNumber);
-                setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_SELECTOR_CONFIRM), 100);
-                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
-                    caption: "Is this the section you want to track?",
-                }).then(() => {
-                    unlink('media/' + filename + '.jpg', () => {});
-                });
-                browser.close();
-                return;
-            }
-
-            const elements = await page.$$(selector);
-
-            if (elements.length === 1) {
-                await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
-                    element.scrollIntoView();
-                }, elements[0]);
-                await page.evaluate('window.scrollBy(0, -150)');
-                const filename = getRandomString();
-                await page.screenshot({
-                    path: './media/' + filename + '.jpg',
-                });
-                TrackEditMemory.setSelector(chatId, selector);
-                setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_SELECTOR_CONFIRM), 100);
-                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
-                    caption: "Is this the section you want to track?",
-                }).then(() => {
-                    unlink('media/' + filename + '.jpg', () => {});
-                });
-            } else if (elements.length > 1) {
-                TrackEditMemory.setSelector(chatId, selector);
-                TrackEditMemory.setSelectorCount(chatId, elements.length);
-                UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_INDEX);
-                bot.sendMessage(chatId, "Looks like there are many HTML elements matching your query. "
-                    + "What is the index of the element? You can obtain the index of the element "
-                    + `by running \`document.querySelectorAll(${selector})\` in browser `
-                    + "and obtain the index of the item in the result list. "
-                    + "Please give me zero-based index.", {
-                        parse_mode: "Markdown",
-                    });
-            } else {
-                bot.sendMessage(chatId, "I did not manage to find any HTML element with your selector. "
-                    + "Please send me the correct selector, or the number of pixels to scroll down.");
-            }
-
-            browser.close();
+            visitLinkAndScrollToSelector({
+                link: link,
+                bot: bot,
+                chatId: chatId,
+                invalidHandler: () => {
+                    TrackEditMemory.deleteUser(chatId);
+                    UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                    bot.sendMessage(chatId, "Oops, looks like the page has just been removed. Operation cancelled.");
+                },
+                selector: selector,
+                caption: "Is this the section you want to track?",
+                setPixelCount: TrackEditMemory.setPixelCount,
+                setSelector: TrackEditMemory.setSelector,
+                setSelectorCount: TrackEditMemory.setSelectorCount,
+                toConfirmState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_SELECTOR_CONFIRM),
+                toIndexState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_INDEX),
+            });
         }
     },
 };
@@ -965,57 +507,23 @@ const trackEditSelectorIndexHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_INDEX) {
-            const index = Number(msg.text);
-            const range = TrackEditMemory.getSelectorCount(chatId);
-            if (isNaN(index) || index >= range || index < 0) {
-                bot.sendMessage(chatId, `Invalid index, index should be between 0 and ${index - 1} inclusive.`);
-                return;
-            }
-
-            bot.sendMessage(chatId, "Alright, give me a second.");
-            TrackEditMemory.setIndex(chatId, index);
-            const selector = TrackEditMemory.getSelector(chatId);
-            const link = TrackEditMemory.getLink(chatId);
-            const { browser, page } = await launchBrowserAndPage();
-
-            try {
-                await page.goto(link);
-            } catch (e) {
-                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-                TrackEditMemory.deleteUser(chatId);
-                bot.sendMessage(chatId, "Oops, looks like the page has just been removed. "
-                    + "Operation cancelled.");
-                browser.close();
-                return;
-            }
-
-            const elements = await page.$$(selector);
-
-            if (elements.length < index) {
-                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-                TrackMemory.deleteUser(chatId);
-                bot.sendMessage(chatId, "Oops, the page appears to have changed as we are talking. "
-                    + "Operation cancelled.");
-                browser.close();
-                return;
-            }
-
-            await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
-                element.scrollIntoView();
-            }, elements[index]);
-            await page.evaluate('window.scrollBy(0, -150)');
-            const filename = getRandomString();
-            await page.screenshot({
-                path: './media/' + filename + '.jpg',
-            });
-
-            setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_SELECTOR_CONFIRM), 100);
-            bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
+            visitLinkAndScrollToSelectorIndex({
+                indexString: msg.text!,
+                bot: bot,
+                chatId: chatId,
+                invalidHandler: () => {
+                    UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                    TrackEditMemory.deleteUser(chatId);
+                    bot.sendMessage(chatId, "Oops, looks like the page has just been removed. Operation cancelled.");
+                },
                 caption: "Is this the section you want to track?",
-            }).then(() => {
-                unlink('media/' + filename + '.jpg', () => {});
+                getSelectorCount: TrackEditMemory.getSelectorCount,
+                deleteUser: TrackEditMemory.deleteUser,
+                setIndex: TrackEditMemory.setIndex,
+                getSelector: TrackEditMemory.getSelector,
+                getLink: TrackEditMemory.getLink,
+                toConfirmState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_SELECTOR_CONFIRM),
             });
-            browser.close();
         }
     },
 };
@@ -1028,58 +536,19 @@ const trackEditSelectorConfirmHandler: PlainHandler = {
             if (reply === 'yes' || reply === 'y') {
                 const tracker = await TrackEditMemory.build(chatId);
                 const { id, address, selector, selectorIndex, caption, frequency, time } = tracker.dataValues;
-                const isValid = () => Tracker.findOne({
-                    where: {
-                        id: id,
-                    },
-                }).then(tracker => tracker !== null);
-                const job = async () => {
-                    const { browser, page } = await launchBrowserAndPage();
-
-                    try {
-                        await page.goto(address);
-                    } catch (e) {
-                        bot.sendMessage(chatId, `Oops, looks like that page at ${address} has been removed.`);
-                        browser.close();
-                        return;
-                    }
-
-                    const tryNumber = Number(selector);
-                    if (!isNaN(tryNumber)) {
-                        await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
-                    } else {
-                        const elements = await page.$$(selector);
-                        if (elements.length >= 1) {
-                            const element = selectorIndex && selectorIndex < elements.length ? elements[selectorIndex] : elements[0];
-                            await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
-                                element.scrollIntoView();
-                            }, element);
-                            await page.evaluate('window.scrollBy(0, -150)');
-                        }
-                    }
-
-                    const filename = getRandomString();
-                    await page.screenshot({
-                        path: './media/' + filename + '.jpg',
-                    });
-                    bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
-                        caption: caption,
-                    }).then(() => {
-                        unlink('media/' + filename + '.jpg', () => {});
-                    });
-                    browser.close();
-                };
-                setReminder({
+                await buildVisitJob({
+                    bot: bot,
+                    chatId: chatId,
+                    id: id,
+                    link: address,
+                    selector: selector,
+                    index: selectorIndex,
+                    caption: caption,
                     number: time,
                     frequency: frequency,
-                    job: job,
-                    isValid: isValid,
+                    feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`,
                 });
-
                 setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.NORMAL), 100);
-                bot.sendMessage(chatId, `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`, {
-                    parse_mode: "Markdown",
-                });
             } else if (reply === 'no' || reply === 'n') {
                 setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_SELECTOR), 100);
                 bot.sendMessage(chatId, "Alright, can you give me the correct query selector, or the correct number of pixels to scroll down?");
@@ -1109,58 +578,19 @@ const trackEditCaptionHandler: PlainHandler = {
 
             const tracker = await TrackEditMemory.build(chatId);
             const { id, address, selector, selectorIndex, caption, frequency, time } = tracker.dataValues;
-            const isValid = () => Tracker.findOne({
-                where: {
-                    id: id,
-                },
-            }).then(tracker => tracker !== null);
-            const job = async () => {
-                const { browser, page } = await launchBrowserAndPage();
-
-                try {
-                    await page.goto(address);
-                } catch (e) {
-                    bot.sendMessage(chatId, `Oops, looks like that page at ${address} has been removed.`);
-                    browser.close();
-                    return;
-                }
-
-                const tryNumber = Number(selector);
-                if (!isNaN(tryNumber)) {
-                    await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
-                } else {
-                    const elements = await page.$$(selector);
-                    if (elements.length >= 1) {
-                        const element = selectorIndex && selectorIndex < elements.length ? elements[selectorIndex] : elements[0];
-                        await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
-                            element.scrollIntoView();
-                        }, element);
-                        await page.evaluate('window.scrollBy(0, -150)');
-                    }
-                }
-
-                const filename = getRandomString();
-                await page.screenshot({
-                    path: './media/' + filename + '.jpg',
-                });
-                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
-                    caption: caption,
-                }).then(() => {
-                    unlink('media/' + filename + '.jpg', () => {});
-                });
-                browser.close();
-            };
-            setReminder({
+            await buildVisitJob({
+                bot: bot,
+                chatId: chatId,
+                id: id,
+                link: address,
+                selector: selector,
+                index: selectorIndex,
+                caption: caption,
                 number: time,
                 frequency: frequency,
-                job: job,
-                isValid: isValid,
+                feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`,
             });
-
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-            bot.sendMessage(chatId, `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`, {
-                parse_mode: "Markdown",
-            });
         }
     },
 };
@@ -1187,46 +617,15 @@ const trackEditFrequencyHandler: PollAnswerHandler = {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_FREQUENCY
                 && query.message!.text === frequencyPoll.question) {
-            const messageId = query.message!.message_id;
-            const selectedOption: FrequencyType = query.data as FrequencyType;
-            TrackEditMemory.setFrequency(chatId, selectedOption);
-
-            bot.editMessageText(
-                `Alright, I will send you screenshots ${selectedOption}`,
-                {
-                    chat_id: chatId,
-                    message_id: messageId,
-                },
-            );
-
-            switch (selectedOption) {
-                case 'daily':
-                    UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_DAILY);
-                    bot.sendMessage(chatId, dailyPoll.question, {
-                        reply_markup: {
-                            inline_keyboard: dailyPoll.options,
-                        },
-                    }).then(msg => {
-                        UserStates.setUserQuestionId(chatId, msg.message_id);
-                    });
-                    break;
-                case 'weekly':
-                    UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_WEEKLY);
-                    bot.sendMessage(chatId, weeklyPoll.question, {
-                        reply_markup: {
-                            inline_keyboard: weeklyPoll.options,
-                        },
-                    }).then(msg => {
-                        UserStates.setUserQuestionId(chatId, msg.message_id);
-                    });
-                    break;
-                case 'once':
-                    UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_ONCE);
-                    bot.sendMessage(chatId, onceQuestion).then(msg => {
-                        UserStates.setUserQuestionId(chatId, msg.message_id);
-                    });
-                    break;
-            }
+            frequencyHandler({
+                bot: bot,
+                chatId: chatId,
+                query: query,
+                toDailyState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_DAILY),
+                toWeeklyState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_WEEKLY),
+                toOnceState: () => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_ONCE),
+                setFrequency: TrackEditMemory.setFrequency,
+            });
         }
     },
 };
@@ -1236,72 +635,13 @@ const trackEditDailyHandler: PollAnswerHandler = {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_DAILY
                 && query.message!.text === dailyPoll.question) {
-            const messageId = query.message!.message_id;
-            const selectedOption = Number(query.data);
-            TrackEditMemory.setTime(chatId, selectedOption);
-
-            bot.editMessageText(
-                `You selected: ${numberToTime(selectedOption)}`,
-                {
-                    chat_id: chatId,
-                    message_id: messageId,
-                },
-            );
-
-            const tracker = await TrackEditMemory.build(chatId);
-            const { id, address, selector, selectorIndex, caption, frequency, time } = tracker.dataValues;
-            const isValid = () => Tracker.findOne({
-                where: {
-                    id: id,
-                },
-            }).then(tracker => tracker !== null);
-            const job = async () => {
-                const { browser, page } = await launchBrowserAndPage();
-
-                try {
-                    await page.goto(address);
-                } catch (e) {
-                    bot.sendMessage(chatId, `Oops, looks like that page at ${address} has been removed.`);
-                    browser.close();
-                    return;
-                }
-
-                const tryNumber = Number(selector);
-                if (!isNaN(tryNumber)) {
-                    await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
-                } else {
-                    const elements = await page.$$(selector);
-                    if (elements.length >= 1) {
-                        const element = selectorIndex && selectorIndex < elements.length ? elements[selectorIndex] : elements[0];
-                        await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
-                            element.scrollIntoView();
-                        }, element);
-                        await page.evaluate('window.scrollBy(0, -150)');
-                    }
-                }
-
-                const filename = getRandomString();
-                await page.screenshot({
-                    path: './media/' + filename + '.jpg',
-                });
-                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
-                    caption: caption,
-                }).then(() => {
-                    unlink('media/' + filename + '.jpg', () => {});
-                });
-                browser.close();
-            };
-            setReminder({
-                number: time,
-                frequency: frequency,
-                job: job,
-                isValid: isValid,
+            await setEditedVisitJob({
+                query: query,
+                bot: bot,
+                chatId: chatId,
+                text: (selectedOption) => `You selected: ${numberToTime(selectedOption)}`,
             });
-
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-            bot.sendMessage(chatId, `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`, {
-                parse_mode: "Markdown",
-            });
         }
     },
 };
@@ -1311,72 +651,13 @@ const trackEditWeeklyHandler: PollAnswerHandler = {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_WEEKLY
                 && query.message!.text === weeklyPoll.question) {
-            const messageId = query.message!.message_id;
-            const selectedOption = Number(query.data);
-            TrackEditMemory.setTime(chatId, selectedOption);
-
-            bot.editMessageText(
-                `You selected: ${weeklyNumberToString(selectedOption)}`,
-                {
-                    chat_id: chatId,
-                    message_id: messageId,
-                },
-            );
-
-            const tracker = await TrackEditMemory.build(chatId);
-            const { id, address, selector, selectorIndex, caption, frequency, time } = tracker.dataValues;
-            const isValid = () => Tracker.findOne({
-                where: {
-                    id: id,
-                },
-            }).then(tracker => tracker !== null);
-            const job = async () => {
-                const { browser, page } = await launchBrowserAndPage();
-
-                try {
-                    await page.goto(address);
-                } catch (e) {
-                    bot.sendMessage(chatId, `Oops, looks like that page at ${address} has been removed.`);
-                    browser.close();
-                    return;
-                }
-
-                const tryNumber = Number(selector);
-                if (!isNaN(tryNumber)) {
-                    await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
-                } else {
-                    const elements = await page.$$(selector);
-                    if (elements.length >= 1) {
-                        const element = selectorIndex && selectorIndex < elements.length ? elements[selectorIndex] : elements[0];
-                        await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
-                            element.scrollIntoView();
-                        }, element);
-                        await page.evaluate('window.scrollBy(0, -150)');
-                    }
-                }
-
-                const filename = getRandomString();
-                await page.screenshot({
-                    path: './media/' + filename + '.jpg',
-                });
-                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
-                    caption: caption,
-                }).then(() => {
-                    unlink('media/' + filename + '.jpg', () => {});
-                });
-                browser.close();
-            };
-            setReminder({
-                number: time,
-                frequency: frequency,
-                job: job,
-                isValid: isValid,
+            await setEditedVisitJob({
+                query: query,
+                bot: bot,
+                chatId: chatId,
+                text: (selectedOption) => `You selected: ${weeklyNumberToString(selectedOption)}`,
             });
-
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-            bot.sendMessage(chatId, `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`, {
-                parse_mode: "Markdown",
-            });
         }
     },
 };
@@ -1385,75 +666,30 @@ const trackEditOnceHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_ONCE) {
-            const date: Date | undefined = parseDateTime(msg.text!);
-            if (!date || isNaN(date.getTime())) {
-                bot.sendMessage(chatId, "Oops, I do not understand your datetime.");
-                return;
-            }
-            if (date < new Date()) {
-                bot.sendMessage(chatId, "Oops, you cannot set website tracker for some time in the past.");
-                return;
-            }
-            if (date > new Date(2030, 11, 31)) {
-                bot.sendMessage(chatId, "Oops, you cannot set website tracker for some time beyond the year of 2030.");
+            const date = checkDateString({
+                string: msg.text!,
+                bot: bot,
+                chatId: chatId,
+            });
+            if (!date) {
                 return;
             }
             TrackEditMemory.setTime(chatId, date.getTime() / 1000);
-
             const tracker = await TrackEditMemory.build(chatId);
             const { id, address, selector, selectorIndex, caption, frequency, time } = tracker.dataValues;
-            const isValid = () => Tracker.findOne({
-                where: {
-                    id: id,
-                },
-            }).then(tracker => tracker !== null);
-            const job = async () => {
-                const { browser, page } = await launchBrowserAndPage();
-
-                try {
-                    await page.goto(address);
-                } catch (e) {
-                    bot.sendMessage(chatId, `Oops, looks like that page at ${address} has been removed.`);
-                    browser.close();
-                    return;
-                }
-
-                const tryNumber = Number(selector);
-                if (!isNaN(tryNumber)) {
-                    await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
-                } else {
-                    const elements = await page.$$(selector);
-                    if (elements.length >= 1) {
-                        const element = selectorIndex && selectorIndex < elements.length ? elements[selectorIndex] : elements[0];
-                        await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
-                            element.scrollIntoView();
-                        }, element);
-                        await page.evaluate('window.scrollBy(0, -150)');
-                    }
-                }
-
-                const filename = getRandomString();
-                await page.screenshot({
-                    path: './media/' + filename + '.jpg',
-                });
-                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
-                    caption: caption,
-                }).then(() => {
-                    unlink('media/' + filename + '.jpg', () => {});
-                });
-                browser.close();
-            };
-            setReminder({
+            await buildVisitJob({
+                bot: bot,
+                chatId: chatId,
+                id: id,
+                link: address,
+                selector: selector,
+                index: selectorIndex,
+                caption: caption,
                 number: time,
                 frequency: frequency,
-                job: job,
-                isValid: isValid,
+                feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`,
             });
-
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-            bot.sendMessage(chatId, `Your tracker has been updated successfully to ${trackerDataToString(tracker)}`, {
-                parse_mode: "Markdown",
-            });
         }
     },
 };
@@ -1463,22 +699,18 @@ const trackDeleteHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_START) {
-            const trackers = (await Tracker.findAll({
-                where: { userChatId: String(chatId) },
-            }));
-            TrackDeleteMemory.setUser(chatId, trackers.map(tracker => ({
-                id: tracker.dataValues.id,
-                link: tracker.dataValues.address,
-            })));
-            let message = 'Here is your list of trackers:';
-            trackers.forEach((tracker, trackerIndex) => {
-                message += `\n${trackerIndex + 1}. ${trackerDataToString(tracker)}`;
+            const isNonEmptyList = await listingAllTrackers({
+                bot: bot,
+                chatId: chatId,
+                tempSetter: allTrackers => TrackDeleteMemory.setUser(chatId, allTrackers.map(tracker => ({
+                    id: tracker.dataValues.id,
+                    link: tracker.dataValues.address,
+                }))),
+                lastNote: "Which tracker do you want to delete? Key in the index of the tracker.",
             });
-            message += `\nWhich tracker do you want to delete? Key in the index of the tracker.`;
-            bot.sendMessage(chatId, message, {
-                parse_mode: "Markdown",
-            });
-            UserStates.setUserState(chatId, UserStates.STATE.TRACK_DELETE);
+            if (isNonEmptyList) {
+                UserStates.setUserState(chatId, UserStates.STATE.TRACK_DELETE);
+            }
         }
     },
 };
@@ -1488,22 +720,18 @@ const deleteTrackHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.DELETE) {
-            const trackers = (await Tracker.findAll({
-                where: { userChatId: String(chatId) },
-            }));
-            TrackDeleteMemory.setUser(chatId, trackers.map(tracker => ({
-                id: tracker.dataValues.id,
-                link: tracker.dataValues.address,
-            })));
-            let message = 'Here is your list of trackers:';
-            trackers.forEach((tracker, trackerIndex) => {
-                message += `\n${trackerIndex + 1}. ${trackerDataToString(tracker)}`;
+            const isNonEmptyList = await listingAllTrackers({
+                bot: bot,
+                chatId: chatId,
+                tempSetter: allTrackers => TrackDeleteMemory.setUser(chatId, allTrackers.map(tracker => ({
+                    id: tracker.dataValues.id,
+                    link: tracker.dataValues.address,
+                }))),
+                lastNote: "Which tracker do you want to delete? Key in the index of the tracker.",
             });
-            message += `\nWhich tracker do you want to delete? Key in the index of the tracker.`;
-            bot.sendMessage(chatId, message, {
-                parse_mode: "Markdown",
-            });
-            UserStates.setUserState(chatId, UserStates.STATE.TRACK_DELETE);
+            if (isNonEmptyList) {
+                UserStates.setUserState(chatId, UserStates.STATE.TRACK_DELETE);
+            }
         }
     },
 };

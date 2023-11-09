@@ -2,10 +2,8 @@ import TelegramBot, { CallbackQuery, Message } from "node-telegram-bot-api";
 import { ReminderDeleteMemory, ReminderEditMemory, ReminderMemory } from './temp';
 import { TextHandler, PlainHandler, PollAnswerHandler } from '../utils/types';
 import UserStates from '../utils/states';
-import { Reminder } from "./db";
 import { dailyPoll, frequencyPoll, onceQuestion, typePoll, weeklyPoll } from './data';
 import { numberToTime, weeklyNumberToString } from "../utils/primitives";
-import { setReminder } from "../utils/schedule";
 import { addReminder, addReminderWithNumber, checkDateString, editReminder, editReminderWithNumber, listingAllReminders, recordFrequency } from "./functions";
 
 const remindStartHandler: TextHandler = {
@@ -332,22 +330,10 @@ const reminderEditContentHandler: PlainHandler = {
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_CONTENT) {
             const newContent = msg.text!;
             ReminderEditMemory.setContent(chatId, newContent);
-
-            const { id, content, frequency, time } = await ReminderEditMemory.build(chatId);
-            const isValid = () => Reminder.findOne({
-                where: { id: id },
-            }).then(reminder => reminder !== null);
-            const job = () => bot.sendMessage(chatId, content);
-            setReminder({
-                number: time,
-                frequency: frequency,
-                job: job,
-                isValid: isValid,
+            editReminderWithNumber({
+                bot: bot,
+                chatId: chatId,
             });
-
-            const [type, changed] = ReminderEditMemory.getReminder(chatId);
-            UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-            bot.sendMessage(chatId, `Alright, I have changed the ${type} of the reminder to ${changed}`);
         }
     }
 };
@@ -414,11 +400,10 @@ const reminderEditOnceHandler: PlainHandler = {
             if (!date) {
                 return;
             }
+            ReminderEditMemory.setTime(chatId, date.getTime() / 1000);
             editReminderWithNumber({
-                number: date.getTime() / 1000,
                 bot: bot,
                 chatId: chatId,
-                frequency: 'once',
             });
         }
     },
