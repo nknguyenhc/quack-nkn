@@ -9,12 +9,19 @@ const startHandler: TextHandler = {
     command: /^\/start$/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId: number = msg.chat.id;
-        await User.findOrCreate({
+        const users = await User.findAll({
             where: {
                 chatId: String(chatId),
-                username: msg.chat.username,
-            },
+            }
         });
+        if (users.length > 0) {
+            const user = users[0];
+            if (msg.chat.username && user.dataValues.username !== msg.chat.username) {
+                user.update({
+                    username: msg.chat.username,
+                });
+            }
+        }
         bot.sendMessage(chatId, 
             'Hello! Welcome to quack-nkn!\n'
             + 'This bot helps you set reminders for yourself and track websites\n'

@@ -34,7 +34,9 @@ export const setReminder = ({ number, frequency, job, isValid }: {
 };
 
 const scheduleJob = (time: Date, job: () => void) => {
-    setTimeout(job, time.getTime() - new Date().getTime());
+    if (time.getTime() - new Date().getTime() > 0) {
+        setTimeout(job, time.getTime() - new Date().getTime());
+    }
 }
 
 const getNearestTime = (number: number): Date => {
@@ -65,18 +67,18 @@ const getNearestDateTime = (weekday: number, timeIndex: number): Date => {
         : timeIndex === 2
         ? 18
         : 22;
-    if (now.getDay() < weekday || (now.getDay() === weekday && now.getHours() < hour)) {
+    if (now.getDay() - 1 < weekday || (now.getDay() - 1 === weekday && now.getHours() < hour)) {
         return new Date(
             now.getFullYear(),
             now.getMonth(),
-            now.getDate(),
+            now.getDate() + (weekday - now.getDay() + 1),
             hour,
         );
     } else {
         return new Date(
             now.getFullYear(),
             now.getMonth(),
-            now.getDate() + 7 - (now.getDay() - weekday),
+            now.getDate() + 7 + (weekday - now.getDay() + 1),
             hour,
         );
     }
