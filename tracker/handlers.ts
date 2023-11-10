@@ -2,7 +2,7 @@ import TelegramBot, { CallbackQuery, Message } from 'node-telegram-bot-api';
 import { PlainHandler, PollAnswerHandler, TextHandler } from '../utils/types';
 import UserStates from '../utils/states';
 import { numberToTime, weeklyNumberToString } from '../utils/primitives';
-import { confirmErrorMessage, dailyPoll, frequencyPoll, weeklyPoll } from './data';
+import { confirmErrorMessage, frequencyPoll } from './data';
 import { TrackDeleteMemory, TrackEditMemory, TrackMemory } from './temp';
 import { buildVisitJob, checkDateString, frequencyHandler, listingAllTrackers, setEditedVisitJob, setVisitJob, trackerDataToString, visitLinkAndScreenshot, visitLinkAndScrollToSelector, visitLinkAndScrollToSelectorIndex } from './functions';
 
