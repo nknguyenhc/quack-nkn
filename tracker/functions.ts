@@ -326,7 +326,7 @@ export const frequencyHandler = ({
 
     switch (selectedOption) {
         case 'daily':
-            toDailyState();
+            setTimeout(toDailyState, 100);
             bot.sendMessage(chatId, dailyPoll.question, {
                 reply_markup: {
                     inline_keyboard: dailyPoll.options,
@@ -336,7 +336,7 @@ export const frequencyHandler = ({
             });
             break;
         case 'weekly':
-            toWeeklyState();
+            setTimeout(toWeeklyState, 100);
             bot.sendMessage(chatId, weeklyPoll.question, {
                 reply_markup: {
                     inline_keyboard: weeklyPoll.options,
@@ -346,7 +346,7 @@ export const frequencyHandler = ({
             });
             break;
         case 'once':
-            toOnceState();
+            setTimeout(toOnceState, 100);
             bot.sendMessage(chatId, onceQuestion).then(msg => {
                 UserStates.setUserQuestionId(chatId, msg.message_id);
             });

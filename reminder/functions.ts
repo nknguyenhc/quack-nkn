@@ -77,10 +77,34 @@ export const recordFrequency = ({
             message_id: messageId,
         },
     );
+    sendTimeQuestion({
+        bot: bot,
+        chatId: chatId,
+        frequency: selectedOption,
+        setDailyState: setDailyState,
+        setWeeklyState: setWeeklyState,
+        setOnceState: setOnceState,
+    });
+};
 
-    switch (selectedOption) {
+export const sendTimeQuestion = ({
+    bot,
+    chatId,
+    frequency,
+    setDailyState,
+    setWeeklyState,
+    setOnceState,
+}: {
+    bot: TelegramBot,
+    chatId: number,
+    frequency: FrequencyType,
+    setDailyState: () => void,
+    setWeeklyState: () => void,
+    setOnceState: () => void,
+}) => {
+    switch (frequency) {
         case 'daily':
-            setDailyState();
+            setTimeout(setDailyState, 100);
             bot.sendMessage(chatId, dailyPoll.question, {
                 reply_markup: {
                     inline_keyboard: dailyPoll.options,
@@ -90,7 +114,7 @@ export const recordFrequency = ({
             });
             break;
         case 'weekly':
-            setWeeklyState();
+            setTimeout(setWeeklyState, 100);
             bot.sendMessage(chatId, weeklyPoll.question, {
                 reply_markup: {
                     inline_keyboard: weeklyPoll.options,
@@ -100,13 +124,13 @@ export const recordFrequency = ({
             });
             break;
         case 'once':
-            setOnceState();
+            setTimeout(setOnceState, 100);
             bot.sendMessage(chatId, onceQuestion).then(msg => {
                 UserStates.setUserQuestionId(chatId, msg.message_id);
             });
             break;
     }
-};
+}
 
 export const addReminder = ({
     query,

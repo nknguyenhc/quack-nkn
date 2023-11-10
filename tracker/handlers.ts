@@ -226,7 +226,7 @@ const trackCaptionHandler: PlainHandler = {
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_CAPTION) {
             const caption = msg.text!;
             TrackMemory.setCaption(chatId, caption);
-            UserStates.setUserState(chatId, UserStates.STATE.TRACK_FREQUENCY);
+            setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_FREQUENCY));
             bot.sendMessage(chatId, frequencyPoll.question, {
                 reply_markup: {
                     inline_keyboard: frequencyPoll.options,
@@ -241,8 +241,7 @@ const trackCaptionHandler: PlainHandler = {
 const trackFrequencyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_FREQUENCY
-                && query.message!.text === frequencyPoll.question) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_FREQUENCY) {
             frequencyHandler({
                 bot: bot,
                 chatId: chatId,
@@ -259,8 +258,7 @@ const trackFrequencyHandler: PollAnswerHandler = {
 const trackDailyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_DAILY
-                && query.message!.text === dailyPoll.question) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_DAILY) {
             await setVisitJob({
                 query: query,
                 bot: bot,
@@ -276,8 +274,7 @@ const trackDailyHandler: PollAnswerHandler = {
 const trackWeeklyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_WEEKLY
-                && query.message!.text === weeklyPoll.question) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_WEEKLY) {
             await setVisitJob({
                 query: query,
                 bot: bot,
@@ -600,7 +597,7 @@ const trackEditFrequencyCommandHandler: TextHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_TYPE) {
-            UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_FREQUENCY);
+            setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_FREQUENCY), 100);
             bot.sendMessage(chatId, frequencyPoll.question, {
                 reply_markup: {
                     inline_keyboard: frequencyPoll.options,
@@ -615,8 +612,7 @@ const trackEditFrequencyCommandHandler: TextHandler = {
 const trackEditFrequencyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_FREQUENCY
-                && query.message!.text === frequencyPoll.question) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_FREQUENCY) {
             frequencyHandler({
                 bot: bot,
                 chatId: chatId,
@@ -633,8 +629,7 @@ const trackEditFrequencyHandler: PollAnswerHandler = {
 const trackEditDailyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_DAILY
-                && query.message!.text === dailyPoll.question) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_DAILY) {
             await setEditedVisitJob({
                 query: query,
                 bot: bot,
@@ -649,8 +644,7 @@ const trackEditDailyHandler: PollAnswerHandler = {
 const trackEditWeeklyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_WEEKLY
-                && query.message!.text === weeklyPoll.question) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_WEEKLY) {
             await setEditedVisitJob({
                 query: query,
                 bot: bot,

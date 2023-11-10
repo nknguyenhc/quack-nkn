@@ -2,9 +2,9 @@ import TelegramBot, { CallbackQuery, Message } from "node-telegram-bot-api";
 import { ReminderDeleteMemory, ReminderEditMemory, ReminderMemory } from './temp';
 import { TextHandler, PlainHandler, PollAnswerHandler } from '../utils/types';
 import UserStates from '../utils/states';
-import { dailyPoll, frequencyPoll, onceQuestion, typePoll, weeklyPoll } from './data';
+import { frequencyPoll, typePoll } from './data';
 import { numberToTime, weeklyNumberToString } from "../utils/primitives";
-import { addReminder, addReminderWithNumber, checkDateString, editReminder, editReminderWithNumber, listingAllReminders, recordFrequency } from "./functions";
+import { addReminder, addReminderWithNumber, checkDateString, editReminder, editReminderWithNumber, listingAllReminders, recordFrequency, sendTimeQuestion } from "./functions";
 
 const remindStartHandler: TextHandler = {
     command: /^\/reminder$/,
@@ -153,7 +153,7 @@ const reminderSetContentHandler: PlainHandler = {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_ADD) {
             ReminderMemory.setContent(chatId, msg.text!);
-            UserStates.setUserState(chatId, UserStates.STATE.REMINDER_FREQUENCY);
+            setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.REMINDER_FREQUENCY), 100);
             bot.sendMessage(chatId, frequencyPoll.question, {
                 reply_markup: {
                     inline_keyboard: frequencyPoll.options,
@@ -168,8 +168,7 @@ const reminderSetContentHandler: PlainHandler = {
 const reminderFrequencyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId: number = query.message!.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_FREQUENCY
-                && query.message!.text === frequencyPoll.question) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_FREQUENCY) {
             recordFrequency({
                 bot: bot,
                 chatId: chatId,
@@ -186,8 +185,7 @@ const reminderFrequencyHandler: PollAnswerHandler = {
 const reminderDailyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_DAILY
-                && query.message!.text === dailyPoll.question) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_DAILY) {
             addReminder({
                 query: query,
                 editedText: selectedOption => `You selected: ${numberToTime(selectedOption)}`,
@@ -202,8 +200,7 @@ const reminderDailyHandler: PollAnswerHandler = {
 const reminderWeeklyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_WEEKLY
-                && query.message!.text === weeklyPoll.question) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_WEEKLY) {
             addReminder({
                 query: query,
                 editedText: selectedOption => `You selected: ${weeklyNumberToString(selectedOption)}.`,
@@ -248,7 +245,7 @@ const reminderEditIndexHandler: PlainHandler = {
                 return;
             }
 
-            UserStates.setUserState(chatId, UserStates.STATE.REMINDER_EDIT_TYPE);
+            setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.REMINDER_EDIT_TYPE), 100);
             bot.sendMessage(chatId, typePoll.question, {
                 reply_markup: {
                     inline_keyboard: typePoll.options,
@@ -263,8 +260,7 @@ const reminderEditIndexHandler: PlainHandler = {
 const reminderTypeHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_TYPE
-                && query.message!.text === typePoll.question) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_TYPE) {
             const messageId = query.message!.message_id;
             const selectedOption = query.data;
             bot.editMessageText(
@@ -281,7 +277,7 @@ const reminderTypeHandler: PollAnswerHandler = {
                     bot.sendMessage(chatId, 'Alright, what do you want to remind yourself with?');
                     break;
                 case 'frequency':
-                    UserStates.setUserState(chatId, UserStates.STATE.REMINDER_EDIT_FREQUENCY);
+                    setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.REMINDER_EDIT_FREQUENCY), 100);
                     bot.sendMessage(chatId, frequencyPoll.question, {
                         reply_markup: {
                             inline_keyboard: frequencyPoll.options,
@@ -292,33 +288,14 @@ const reminderTypeHandler: PollAnswerHandler = {
                     break;
                 case 'time':
                     const currFrequency = await ReminderEditMemory.autoSetFrequency(chatId);
-                    switch (currFrequency) {
-                        case 'daily':
-                            UserStates.setUserState(chatId, UserStates.STATE.REMINDER_EDIT_DAILY);
-                            bot.sendMessage(chatId, dailyPoll.question, {
-                                reply_markup: {
-                                    inline_keyboard: dailyPoll.options,
-                                },
-                            }).then((msg) => {
-                                UserStates.setUserQuestionId(chatId, msg.message_id);
-                            });
-                            break;
-                        case 'weekly':
-                            UserStates.setUserState(chatId, UserStates.STATE.REMINDER_EDIT_WEEKLY);
-                            bot.sendMessage(chatId, weeklyPoll.question, {
-                                reply_markup: {
-                                    inline_keyboard: weeklyPoll.options,
-                                },
-                            }).then((msg) => {
-                                UserStates.setUserQuestionId(chatId, msg.message_id);
-                            });
-                            break;
-                        case 'once':
-                            UserStates.setUserState(chatId, UserStates.STATE.REMINDER_EDIT_ONCE);
-                            bot.sendMessage(chatId, onceQuestion);
-                            break;
-                    }
-                    break;
+                    sendTimeQuestion({
+                        bot: bot,
+                        chatId: chatId,
+                        frequency: currFrequency,
+                        setDailyState: () => UserStates.setUserState(chatId, UserStates.STATE.REMINDER_EDIT_DAILY),
+                        setWeeklyState: () => UserStates.setUserState(chatId, UserStates.STATE.REMINDER_EDIT_WEEKLY),
+                        setOnceState: () => UserStates.setUserState(chatId, UserStates.STATE.REMINDER_EDIT_ONCE),
+                    });
             }
         }
     }
@@ -341,8 +318,7 @@ const reminderEditContentHandler: PlainHandler = {
 const reminderEditFrequencyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_FREQUENCY
-                && query.message!.text === frequencyPoll.question) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_FREQUENCY) {
             recordFrequency({
                 bot: bot,
                 chatId: chatId,
@@ -359,8 +335,7 @@ const reminderEditFrequencyHandler: PollAnswerHandler = {
 const reminderEditDailyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_DAILY
-                && query.message!.text === dailyPoll.question) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_DAILY) {
             editReminder({
                 query: query,
                 editedText: (selectedOption) => `You selected: ${numberToTime(selectedOption)}`,
@@ -375,8 +350,7 @@ const reminderEditDailyHandler: PollAnswerHandler = {
 const reminderEditWeeklyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
-        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_WEEKLY
-                && query.message!.text === weeklyPoll.question) {
+        if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_WEEKLY) {
             editReminder({
                 query: query,
                 editedText: (selectedOption) => `You selected: ${numberToTime(selectedOption)}`,
