@@ -10,6 +10,7 @@ const sequelize = getConnection();
 type UserType = {
     chatId: string,
     username: string | undefined,
+    timezone: number,
 }
 
 export const User = sequelize.define<Model<UserType>>('User', {
@@ -21,6 +22,10 @@ export const User = sequelize.define<Model<UserType>>('User', {
         type: DataTypes.STRING,
         allowNull: true,
     },
+    timezone: {
+        type: DataTypes.INTEGER,
+        defaultValue: 8,
+    }
 });
 
 User.hasMany(Reminder, {

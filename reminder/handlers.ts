@@ -216,7 +216,7 @@ const reminderOnceHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_ONCE) {
-            const date = checkDateString({
+            const date = await checkDateString({
                 string: msg.text!,
                 bot: bot,
                 chatId: chatId,
@@ -366,7 +366,7 @@ const reminderEditOnceHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.REMINDER_EDIT_ONCE) {
-            const date = checkDateString({
+            const date = await checkDateString({
                 string: msg.text!,
                 bot: bot,
                 chatId: chatId,

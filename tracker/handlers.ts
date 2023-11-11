@@ -291,7 +291,7 @@ const trackOnceHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_ONCE) {
-            const date = checkDateString({
+            const date = await checkDateString({
                 string: msg.text!,
                 bot: bot,
                 chatId: chatId,
@@ -660,7 +660,7 @@ const trackEditOnceHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_ONCE) {
-            const date = checkDateString({
+            const date = await checkDateString({
                 string: msg.text!,
                 bot: bot,
                 chatId: chatId,

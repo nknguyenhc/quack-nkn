@@ -1,25 +1,26 @@
 export type FrequencyType = 'daily' | 'weekly' | 'once';
 
-export const setReminder = ({ number, frequency, job, isValid }: {
+export const setReminder = ({ number, frequency, job, isValid, timezone }: {
     number: number,
     frequency: FrequencyType,
     job: () => void,
     isValid: () => Promise<boolean>,
+    timezone: number,
 }): void => {
     switch (frequency) {
         case 'daily':
-            scheduleJob(getNearestTime(number), async () => {
+            scheduleJob(getNearestTime(number, timezone), async () => {
                 if (await isValid()) {
                     job();
-                    setReminder({ number, frequency, job, isValid });
+                    setReminder({ number, frequency, job, isValid, timezone });
                 }
             });
             break;
         case 'weekly':
-            scheduleJob(getNearestDateTime(Math.floor(number / 4), number % 4), async () => {
+            scheduleJob(getNearestDateTime(Math.floor(number / 4), number % 4, timezone), async () => {
                 if (await isValid()) {
                     job();
-                    setReminder({ number, frequency, job, isValid });
+                    setReminder({ number, frequency, job, isValid, timezone });
                 }
             });
             break;
@@ -39,27 +40,27 @@ const scheduleJob = (time: Date, job: () => void) => {
     }
 }
 
-const getNearestTime = (number: number): Date => {
-    const now = new Date();
-    if (now.getHours() < number) {
-        return new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate(),
-            number,
-        );
+const getNearestTime = (number: number, timezone: number): Date => {
+    const now = new Date(new Date().getTime() + timezone * 3600 * 1000);
+    if (now.getUTCHours() < number) {
+        return new Date(Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate(),
+            number - timezone,
+        ));
     } else {
-        return new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate() + 1,
-            number,
-        );
+        return new Date(Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate() + 1,
+            number - timezone,
+        ));
     }
 }
 
-const getNearestDateTime = (weekday: number, timeIndex: number): Date => {
-    const now = new Date();
+const getNearestDateTime = (weekday: number, timeIndex: number, timezone: number): Date => {
+    const now = new Date(new Date().getTime() + timezone * 3600 * 1000);
     const hour = timeIndex === 0
         ? 6
         : timeIndex === 1
@@ -67,19 +68,19 @@ const getNearestDateTime = (weekday: number, timeIndex: number): Date => {
         : timeIndex === 2
         ? 18
         : 22;
-    if (now.getDay() - 1 < weekday || (now.getDay() - 1 === weekday && now.getHours() < hour)) {
-        return new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate() + (weekday - now.getDay() + 1),
-            hour,
-        );
+    if (now.getUTCDay() - 1 < weekday || (now.getUTCDay() - 1 === weekday && now.getUTCHours() < hour)) {
+        return new Date(Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate() + (weekday - now.getUTCDay() + 1),
+            hour - timezone,
+        ));
     } else {
-        return new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate() + 7 + (weekday - now.getDay() + 1),
-            hour,
-        );
+        return new Date(Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate() + 7 + (weekday - now.getUTCDay() + 1),
+            hour - timezone,
+        ));
     }
 }

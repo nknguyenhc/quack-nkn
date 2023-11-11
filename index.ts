@@ -1,5 +1,5 @@
 import TelegramBot, { Message } from 'node-telegram-bot-api';
-import { plainUserHandlers, textUserHandlers } from './users/handlers';
+import { plainUserHandlers, pollUserHandlers, textUserHandlers } from './users/handlers';
 import { textReminderHandlers, plainReminderHandlers, pollAnswerReminderHandlers } from './reminder/handlers';
 import reminderStartJob from './reminder/start';
 import { trackPlainHandler, trackPollHandler, trackTextHandlers } from './tracker/handlers';
@@ -23,6 +23,10 @@ function main() {
 
     plainUserHandlers.forEach((handler) => {
         bot.on("message", handler.handler(bot));
+    });
+
+    pollUserHandlers.forEach((handler) => {
+        bot.on("callback_query", handler.handler(bot));
     });
 
     textReminderHandlers.forEach((handler) => {

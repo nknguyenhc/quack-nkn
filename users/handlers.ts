@@ -1,9 +1,10 @@
-import TelegramBot, { Message } from "node-telegram-bot-api";
+import TelegramBot, { CallbackQuery, Message } from "node-telegram-bot-api";
 import { User } from './db';
-import { PlainHandler, TextHandler } from '../utils/types';
+import { PlainHandler, PollAnswerHandler, TextHandler } from '../utils/types';
 import UserStates, { knownCommands } from "../utils/states";
 import { ReminderDeleteMemory, ReminderEditMemory, ReminderMemory } from "../reminder/temp";
 import { TrackDeleteMemory, TrackEditMemory, TrackMemory } from "../tracker/temp";
+import { timezonePoll } from './data';
 
 const startHandler: TextHandler = {
     command: /^\/start$/,
@@ -29,10 +30,59 @@ const startHandler: TextHandler = {
             + 'Here is the list of available commands:\n'
             + '/start - show this message\n'
             + '/reminder - add, view, edit or delete your reminders\n'
+            + '/timezone - set your timezone\n'
             + '/track - add, view, edit or delete your website trackers\n'
             + '/cancel - at anytime when you wish to cancel what you are doing, you may use this command');
     }
 };
+
+const setTimezoneHandler: TextHandler = {
+    command: /^\/timezone$/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId: number = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
+            UserStates.setUserState(chatId, UserStates.STATE.TIMEZONE);
+
+            const timezone = (await User.findOne({
+                where: {
+                    chatId: String(chatId),
+                },
+            })).dataValues.timezone;
+
+            bot.sendMessage(chatId, `Your current timezone is currently set to GMT${timezone >= 0 ? "+" + timezone : timezone}. ` + timezonePoll.question, {
+                reply_markup: {
+                    inline_keyboard: timezonePoll.options,
+                },
+            });
+        }
+    }
+};
+
+const timezoneHandler: PollAnswerHandler = {
+    handler: (bot: TelegramBot) => (query: CallbackQuery) => {
+        const chatId = query.message!.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TIMEZONE) {
+            const messageId = query.message!.message_id;
+            const selectedOption = Number(query.data);
+
+            User.update({
+                timezone: selectedOption,
+            }, {
+                where: {
+                    chatId: String(chatId),
+                },
+            });
+
+            bot.editMessageText(
+                `Alright, I have set your timezone to GMT${selectedOption >= 0 ? "+" + selectedOption : selectedOption}`,
+                {
+                    chat_id: chatId,
+                    message_id: messageId,
+                },
+            );
+        }
+    }
+}
 
 const cancelHandler: TextHandler = {
     command: /^\/cancel$/,
@@ -126,6 +176,7 @@ const errorHandler: PlainHandler = {
 
 export const textUserHandlers: Array<TextHandler> = [
     startHandler,
+    setTimezoneHandler,
     cancelHandler,
     addHandler,
     listHandler,
@@ -135,4 +186,8 @@ export const textUserHandlers: Array<TextHandler> = [
 
 export const plainUserHandlers: Array<PlainHandler> = [
     errorHandler,
+];
+
+export const pollUserHandlers: Array<PollAnswerHandler> = [
+    timezoneHandler,
 ];

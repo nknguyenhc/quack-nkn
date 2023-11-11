@@ -8,6 +8,7 @@ import { unlink } from "fs";
 import { TrackEditMemory, TrackMemory } from "./temp";
 import { FrequencyType, setReminder } from "../utils/schedule";
 import { dailyPoll, onceQuestion, weeklyPoll } from "./data";
+import { User } from "../users/db";
 
 const launchBrowserAndPage = async () => {
     const browser = await launch();
@@ -495,11 +496,18 @@ export const buildVisitJob = async ({
         browser.close();
         return;
     };
+
+    const timezone = (await User.findOne({
+        where: {
+            chatId: String(chatId),
+        },
+    })).dataValues.timezone;
     setReminder({
         number: number,
         frequency: frequency,
         job: job,
         isValid: isValid,
+        timezone: timezone,
     });
     
     bot.sendMessage(chatId, feedback(), {
@@ -507,7 +515,7 @@ export const buildVisitJob = async ({
     });
 };
 
-export const checkDateString = ({
+export const checkDateString = async ({
     string,
     bot,
     chatId,
@@ -515,8 +523,13 @@ export const checkDateString = ({
     string: string,
     bot: TelegramBot,
     chatId: number,
-}): Date | undefined => {
-    const date: Date | undefined = parseDateTime(string);
+}): Promise<Date | undefined> => {
+    const timezone = (await User.findOne({
+        where: {
+            chatId: String(chatId),
+        },
+    })).dataValues.timezone;
+    const date: Date | undefined = parseDateTime(string, timezone);
     if (!date || isNaN(date.getTime())) {
         bot.sendMessage(chatId, "Oops, I do not understand your datetime.");
         return;

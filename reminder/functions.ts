@@ -6,6 +6,7 @@ import UserStates from "../utils/states";
 import { FrequencyType, setReminder } from "../utils/schedule";
 import { dailyPoll, onceQuestion, weeklyPoll } from "./data";
 import { ReminderEditMemory, ReminderMemory } from "./temp";
+import { User } from "../users/db";
 
 const reminderDataToString = (reminder: Model<ReminderType, ReminderType>): string => {
     return `${
@@ -182,11 +183,18 @@ export const addReminderWithNumber = async ({
         }
     }).then(reminder => reminder !== null);
     const job = () => bot.sendMessage(chatId, message);
+
+    const timezone = (await User.findOne({
+        where: {
+            chatId: String(chatId),
+        },
+    })).dataValues.timezone;
     setReminder({
         number: number,
         frequency: frequency,
         job: job,
         isValid: isValid,
+        timezone: timezone,
     });
 
     UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
@@ -234,11 +242,18 @@ export const editReminderWithNumber = async ({
         where: { id: id },
     }).then(reminder => reminder !== null);
     const job = () => bot.sendMessage(chatId, content);
+
+    const timezone = (await User.findOne({
+        where: {
+            chatId: String(chatId),
+        },
+    })).dataValues.timezone;
     setReminder({
         number: time,
         frequency: frequency,
         job: job,
         isValid: isValid,
+        timezone: timezone,
     });
 
     const [type, changed] = ReminderEditMemory.getReminder(chatId);
@@ -246,7 +261,7 @@ export const editReminderWithNumber = async ({
     bot.sendMessage(chatId, `Alright, I have changed the ${type} of the reminder to ${changed}`);
 };
 
-export const checkDateString = ({
+export const checkDateString = async ({
     string,
     bot,
     chatId,
@@ -254,8 +269,13 @@ export const checkDateString = ({
     string: string,
     bot: TelegramBot,
     chatId: number,
-}): Date | undefined => {
-    const date = parseDateTime(string);
+}): Promise<Date | undefined> => {
+    const timezone = (await User.findOne({
+        where: {
+            chatId: String(chatId),
+        },
+    })).dataValues.timezone;
+    const date = parseDateTime(string, timezone);
     if (!date || isNaN(date.getTime())) {
         bot.sendMessage(chatId, "Oops, I do not understand your datetime.");
         return;

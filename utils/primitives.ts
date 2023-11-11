@@ -86,7 +86,7 @@ export const weeklyNumberToString = (number: number): string => {
     return `every week ${dayString} ${timeString}`;
 }
 
-export const parseDateTime = (str: string): Date | undefined => {
+export const parseDateTime = (str: string, timezone: number): Date | undefined => {
     const splitBySpace = str.split(' ');
     if (splitBySpace.length !== 2) {
         return undefined;
@@ -107,7 +107,7 @@ export const parseDateTime = (str: string): Date | undefined => {
     if (isNaN(day) || isNaN(month) || isNaN(year) || isNaN(hour) || isNaN(minute)) {
         return undefined;
     }
-    return new Date(year, month - 1, day, hour, minute);
+    return new Date(Date.UTC(year, month - 1, day, hour - timezone, minute));
 }
 
 export const getRandomString = (): string => {

@@ -6,6 +6,9 @@ enum STATE {
     EDIT,
     DELETE,
 
+    // timezone
+    TIMEZONE,
+
     // reminder
     REMINDER_START,
 
@@ -63,10 +66,11 @@ type KnownCommandHelper = {
 
 export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, KnownCommandHelper>([
     [STATE.NORMAL, {
-        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/, /^\/track$/, /^\/add$/, /^\/list$/, /^\/edit$/, /^\/delete$/],
+        commands: [/^\/start$/, /^\/cancel$/, /^\/timezone$/, /^\/reminder$/, /^\/track$/, /^\/add$/, /^\/list$/, /^\/edit$/, /^\/delete$/],
         errorMessage: 'Invalid command, here is the current list of available commands:\n'
             + '/start - show start message\n'
             + '/cancel - cancel any operation at any time\n'
+            + '/timezone - set your timezone\n'
             + '/reminder - add, view, edit or delete your reminders\n'
             + '/track - add, view, edit or delete your website trackers\n'
             + '/add - add a new reminder or a website tracker\n'
@@ -109,6 +113,13 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
             + '/cancel - cancel adding\n'
             + '/reminder - delete a reminder\n'
             + '/track - delete a website tracker',
+        allowPlain: false,
+    }],
+    [STATE.TIMEZONE, {
+        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/, /^\/track$/, /^\/add$/, /^\/list$/, /^\/edit$/, /^\/delete$/],
+        errorMessage: 'Invalid command, here is the list of commands for adding timezone:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel adding timezone\n',
         allowPlain: false,
     }],
     [STATE.REMINDER_START, {

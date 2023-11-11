@@ -5,10 +5,11 @@ import { setReminder } from '../utils/schedule';
 import { launch } from 'puppeteer';
 import { getRandomString } from '../utils/primitives';
 import { unlink } from 'fs';
+import { User } from '../users/db';
 
 const trackStartJob: StartBotJob = async (bot: TelegramBot) => {
     const trackers = await Tracker.findAll();
-    trackers.forEach(tracker => {
+    trackers.forEach(async tracker => {
         if (tracker.dataValues.frequency === 'once' && tracker.dataValues.time * 1000 < new Date().getTime()) {
             return;
         }
@@ -58,11 +59,17 @@ const trackStartJob: StartBotJob = async (bot: TelegramBot) => {
             },
         }).then(tracker => tracker !== null);
 
+        const timezone = (await User.findOne({
+            where: {
+                chatId: tracker.dataValues.userChatId,
+            },
+        })).dataValues.timezone;
         setReminder({
             number: time,
             frequency: frequency,
             job: job,
             isValid: isValid,
+            timezone: timezone,
         });
     })
 };
