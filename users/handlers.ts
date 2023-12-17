@@ -53,6 +53,8 @@ const setTimezoneHandler: TextHandler = {
                 reply_markup: {
                     inline_keyboard: timezonePoll.options,
                 },
+            }).then(msg => {
+                UserStates.setUserQuestionId(chatId, msg.message_id);
             });
         }
     }
