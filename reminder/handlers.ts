@@ -341,7 +341,6 @@ const reminderEditDailyHandler: PollAnswerHandler = {
                 editedText: (selectedOption) => `You selected: ${numberToTime(selectedOption)}`,
                 bot: bot,
                 chatId: chatId,
-                frequency: 'daily',
             });
         }
     },
@@ -356,7 +355,6 @@ const reminderEditWeeklyHandler: PollAnswerHandler = {
                 editedText: (selectedOption) => `You selected: ${numberToTime(selectedOption)}`,
                 bot: bot,
                 chatId: chatId,
-                frequency: 'daily',
             });
         }
     },

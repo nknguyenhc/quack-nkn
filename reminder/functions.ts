@@ -206,13 +206,11 @@ export const editReminder = ({
     editedText,
     bot,
     chatId,
-    frequency,
 }: {
     query: CallbackQuery,
     editedText: (selectedOption: number) => string,
     bot: TelegramBot,
     chatId: number,
-    frequency: FrequencyType,
 }) => {
     const messageId = query.message!.message_id;
     const selectedOption = Number(query.data);
