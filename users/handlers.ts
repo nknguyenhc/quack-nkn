@@ -1,5 +1,5 @@
 import TelegramBot, { CallbackQuery, Message } from "node-telegram-bot-api";
-import { User } from './db';
+import { User, getTimezone } from './db';
 import { PlainHandler, PollAnswerHandler, TextHandler } from '../utils/types';
 import UserStates, { knownCommands } from "../utils/states";
 import { ReminderDeleteMemory, ReminderEditMemory, ReminderMemory } from "../reminder/temp";
@@ -43,11 +43,7 @@ const setTimezoneHandler: TextHandler = {
         if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
             UserStates.setUserState(chatId, UserStates.STATE.TIMEZONE);
 
-            const timezone = (await User.findOne({
-                where: {
-                    chatId: String(chatId),
-                },
-            })).dataValues.timezone;
+            const timezone = await getTimezone(chatId);
 
             bot.sendMessage(chatId, `Your current timezone is currently set to GMT${timezone >= 0 ? "+" + timezone : timezone}. ` + timezonePoll.question, {
                 reply_markup: {

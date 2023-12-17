@@ -8,7 +8,7 @@ import { unlink } from "fs";
 import { TrackEditMemory, TrackMemory } from "./temp";
 import { FrequencyType, setReminder } from "../utils/schedule";
 import { dailyPoll, onceQuestion, weeklyPoll } from "./data";
-import { User } from "../users/db";
+import { getTimezone } from "../users/db";
 
 const launchBrowserAndPage = async () => {
     const browser = await launch({
@@ -25,13 +25,13 @@ const launchBrowserAndPage = async () => {
     return { browser, page };
 }
 
-export const trackerDataToString = (tracker: Model<TrackerType, TrackerType>): string => {
+export const trackerDataToString = (tracker: Model<TrackerType, TrackerType>, timezone: number): string => {
     return `\`${
         tracker.dataValues.address
     }\` (${
         tracker.dataValues.frequency
     }) ${
-        numberToTimeString(tracker.dataValues.time, tracker.dataValues.frequency)
+        numberToTimeString(tracker.dataValues.time, tracker.dataValues.frequency, timezone)
     } (selector: ${
         tracker.dataValues.selector
     }, caption: ${
@@ -62,9 +62,10 @@ export const listingAllTrackers = async ({
         return false;
     }
 
+    const timezone = await getTimezone(chatId);
     let message = 'Alright, here is your list of website trackers:';
     allTrackers.forEach((tracker, trackerIndex) => {
-        message += `\n${trackerIndex + 1}. ${trackerDataToString(tracker)}`;
+        message += `\n${trackerIndex + 1}. ${trackerDataToString(tracker, timezone)}`;
     });
     lastNote && (message += "\n" + lastNote);
     bot.sendMessage(chatId, message, {
@@ -385,6 +386,7 @@ export const setVisitJob = async ({
         },
     );
     const { id, link, selector, index, caption } = await TrackMemory.build(chatId);
+    const timezone = await getTimezone(chatId);
     await buildVisitJob({
         bot: bot,
         chatId: chatId,
@@ -395,7 +397,7 @@ export const setVisitJob = async ({
         caption: caption,
         number: selectedOption,
         frequency: frequency,
-        feedback: () => `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId)}`,
+        feedback: () => `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId, timezone)}`,
     });
 };
 
@@ -424,6 +426,7 @@ export const setEditedVisitJob = async ({
 
     const tracker = await TrackEditMemory.build(chatId);
     const { id, address, selector, selectorIndex, caption, frequency, time } = tracker.dataValues;
+    const timezone = await getTimezone(chatId);
     await buildVisitJob({
         bot: bot,
         chatId: chatId,
@@ -434,7 +437,7 @@ export const setEditedVisitJob = async ({
         caption: caption,
         number: time,
         frequency: frequency,
-        feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`,
+        feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker, timezone)}.`,
     });
 };
 
@@ -502,11 +505,7 @@ export const buildVisitJob = async ({
         return;
     };
 
-    const timezone = (await User.findOne({
-        where: {
-            chatId: String(chatId),
-        },
-    })).dataValues.timezone;
+    const timezone = await getTimezone(chatId);
     setReminder({
         number: number,
         frequency: frequency,
@@ -529,11 +528,7 @@ export const checkDateString = async ({
     bot: TelegramBot,
     chatId: number,
 }): Promise<Date | undefined> => {
-    const timezone = (await User.findOne({
-        where: {
-            chatId: String(chatId),
-        },
-    })).dataValues.timezone;
+    const timezone = await getTimezone(chatId);
     const date: Date | undefined = parseDateTime(string, timezone);
     if (!date || isNaN(date.getTime())) {
         bot.sendMessage(chatId, "Oops, I do not understand your datetime.");

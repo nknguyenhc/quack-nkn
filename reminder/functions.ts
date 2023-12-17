@@ -6,15 +6,15 @@ import UserStates from "../utils/states";
 import { FrequencyType, setReminder } from "../utils/schedule";
 import { dailyPoll, onceQuestion, weeklyPoll } from "./data";
 import { ReminderEditMemory, ReminderMemory } from "./temp";
-import { User } from "../users/db";
+import { getTimezone } from "../users/db";
 
-const reminderDataToString = (reminder: Model<ReminderType, ReminderType>): string => {
+const reminderDataToString = (reminder: Model<ReminderType, ReminderType>, timezone: number): string => {
     return `${
         reminder.dataValues.content
     } (${
         reminder.dataValues.frequency
     }) ${
-        numberToTimeString(reminder.dataValues.time, reminder.dataValues.frequency)
+        numberToTimeString(reminder.dataValues.time, reminder.dataValues.frequency, timezone)
     }`;
 };
 
@@ -41,9 +41,10 @@ export const listingAllReminders = async ({
         return false;
     }
 
+    const timezone = await getTimezone(chatId);
     let message = 'Alright, here is your list of reminders:';
     allReminders.forEach((reminder, reminderIndex) => {
-        message += `\n${reminderIndex + 1}. ${reminderDataToString(reminder)}`;
+        message += `\n${reminderIndex + 1}. ${reminderDataToString(reminder, timezone)}`;
     });
     lastNote && (message += "\n" + lastNote);
     bot.sendMessage(chatId, message);
@@ -184,11 +185,7 @@ export const addReminderWithNumber = async ({
     }).then(reminder => reminder !== null);
     const job = () => bot.sendMessage(chatId, message);
 
-    const timezone = (await User.findOne({
-        where: {
-            chatId: String(chatId),
-        },
-    })).dataValues.timezone;
+    const timezone = await getTimezone(chatId);
     setReminder({
         number: number,
         frequency: frequency,
@@ -198,7 +195,7 @@ export const addReminderWithNumber = async ({
     });
 
     UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-    bot.sendMessage(chatId, `Alright, I have set reminder for ${ReminderMemory.getReminder(chatId)}.`);
+    bot.sendMessage(chatId, `Alright, I have set reminder for ${ReminderMemory.getReminder(chatId, timezone)}.`);
 };
 
 export const editReminder = ({
@@ -241,11 +238,7 @@ export const editReminderWithNumber = async ({
     }).then(reminder => reminder !== null);
     const job = () => bot.sendMessage(chatId, content);
 
-    const timezone = (await User.findOne({
-        where: {
-            chatId: String(chatId),
-        },
-    })).dataValues.timezone;
+    const timezone = await getTimezone(chatId);
     setReminder({
         number: time,
         frequency: frequency,
@@ -254,7 +247,7 @@ export const editReminderWithNumber = async ({
         timezone: timezone,
     });
 
-    const [type, changed] = ReminderEditMemory.getReminder(chatId);
+    const [type, changed] = ReminderEditMemory.getReminder(chatId, timezone);
     UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
     bot.sendMessage(chatId, `Alright, I have changed the ${type} of the reminder to ${changed}`);
 };
@@ -268,11 +261,7 @@ export const checkDateString = async ({
     bot: TelegramBot,
     chatId: number,
 }): Promise<Date | undefined> => {
-    const timezone = (await User.findOne({
-        where: {
-            chatId: String(chatId),
-        },
-    })).dataValues.timezone;
+    const timezone = await getTimezone(chatId);
     const date = parseDateTime(string, timezone);
     if (!date || isNaN(date.getTime())) {
         bot.sendMessage(chatId, "Oops, I do not understand your datetime.");

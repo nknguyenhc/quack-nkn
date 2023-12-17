@@ -8,17 +8,18 @@ export const formatNumber = (number: number, length: number) => {
     }
 }
 
-export const formatDate = (date: Date) => {
+const formatDate = (date: Date, timezone: number) => {
+    const now = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours() + timezone, date.getUTCMinutes()));
     return `${
-        formatNumber(date.getDate(), 2)
+        formatNumber(now.getUTCDate(), 2)
     }/${
-        formatNumber(date.getMonth() + 1, 2)
+        formatNumber(now.getUTCMonth() + 1, 2)
     }/${
-        formatNumber(date.getFullYear(), 4)
+        formatNumber(now.getUTCFullYear(), 4)
     } ${
-        formatNumber(date.getHours(), 2)
+        formatNumber(now.getUTCHours(), 2)
     }:${
-        formatNumber(date.getMinutes(), 2)
+        formatNumber(now.getUTCMinutes(), 2)
     }`
 }
 
@@ -32,14 +33,14 @@ export const numberToTime = (number: number): string => {
     }
 }
 
-export const numberToTimeString = (number: number, frequency: FrequencyType): string => {
+export const numberToTimeString = (number: number, frequency: FrequencyType, timezone: number): string => {
     switch (frequency) {
         case 'daily':
             return `everyday ${numberToTime(number)}`;
         case 'weekly':
             return weeklyNumberToString(number);
         case 'once':
-            return `at ${formatDate(new Date(number * 1000))}`;
+            return `at ${formatDate(new Date(number * 1000), timezone)}`;
     }
 }
 

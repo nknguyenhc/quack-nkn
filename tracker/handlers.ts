@@ -5,6 +5,7 @@ import { numberToTime, weeklyNumberToString } from '../utils/primitives';
 import { confirmErrorMessage, frequencyPoll } from './data';
 import { TrackDeleteMemory, TrackEditMemory, TrackMemory } from './temp';
 import { buildVisitJob, checkDateString, frequencyHandler, listingAllTrackers, setEditedVisitJob, setVisitJob, trackerDataToString, visitLinkAndScreenshot, visitLinkAndScrollToSelector, visitLinkAndScrollToSelectorIndex } from './functions';
+import { getTimezone } from '../users/db';
 
 const trackHandler: TextHandler = {
     command: /^\/track$/,
@@ -301,6 +302,7 @@ const trackOnceHandler: PlainHandler = {
             }
             TrackMemory.setTime(chatId, date.getTime() / 1000);
             const { id, link, selector, index, caption } = await TrackMemory.build(chatId);
+            const timezone = await getTimezone(chatId);
             await buildVisitJob({
                 bot: bot,
                 chatId: chatId,
@@ -311,7 +313,7 @@ const trackOnceHandler: PlainHandler = {
                 caption: caption,
                 number: date.getTime()/ 1000,
                 frequency: 'once',
-                feedback: () => `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId)}`,
+                feedback: () => `Alright, I have set a website tracker for ${TrackMemory.getTracker(chatId, timezone)}`,
             });
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
         }
@@ -461,6 +463,7 @@ const trackEditSelectorHandler: PlainHandler = {
                 TrackEditMemory.setPixelCount(chatId, 0);
                 const tracker = await TrackEditMemory.build(chatId);
                 const { id, address, selector, selectorIndex, caption, frequency, time } = tracker.dataValues;
+                const timezone = await getTimezone(chatId);
                 await buildVisitJob({
                     bot: bot,
                     chatId: chatId,
@@ -471,7 +474,7 @@ const trackEditSelectorHandler: PlainHandler = {
                     caption: caption,
                     number: time,
                     frequency: frequency,
-                    feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`,
+                    feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker, timezone)}.`,
                 });
                 setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.NORMAL), 100);
                 return;
@@ -533,6 +536,7 @@ const trackEditSelectorConfirmHandler: PlainHandler = {
             if (reply === 'yes' || reply === 'y') {
                 const tracker = await TrackEditMemory.build(chatId);
                 const { id, address, selector, selectorIndex, caption, frequency, time } = tracker.dataValues;
+                const timezone = await getTimezone(chatId);
                 await buildVisitJob({
                     bot: bot,
                     chatId: chatId,
@@ -543,7 +547,7 @@ const trackEditSelectorConfirmHandler: PlainHandler = {
                     caption: caption,
                     number: time,
                     frequency: frequency,
-                    feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`,
+                    feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker, timezone)}.`,
                 });
                 setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.NORMAL), 100);
             } else if (reply === 'no' || reply === 'n') {
@@ -575,6 +579,7 @@ const trackEditCaptionHandler: PlainHandler = {
 
             const tracker = await TrackEditMemory.build(chatId);
             const { id, address, selector, selectorIndex, caption, frequency, time } = tracker.dataValues;
+            const timezone = await getTimezone(chatId);
             await buildVisitJob({
                 bot: bot,
                 chatId: chatId,
@@ -585,7 +590,7 @@ const trackEditCaptionHandler: PlainHandler = {
                 caption: caption,
                 number: time,
                 frequency: frequency,
-                feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`,
+                feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker, timezone)}.`,
             });
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
         }
@@ -671,6 +676,7 @@ const trackEditOnceHandler: PlainHandler = {
             TrackEditMemory.setTime(chatId, date.getTime() / 1000);
             const tracker = await TrackEditMemory.build(chatId);
             const { id, address, selector, selectorIndex, caption, frequency, time } = tracker.dataValues;
+            const timezone = await getTimezone(chatId);
             await buildVisitJob({
                 bot: bot,
                 chatId: chatId,
@@ -681,7 +687,7 @@ const trackEditOnceHandler: PlainHandler = {
                 caption: caption,
                 number: time,
                 frequency: frequency,
-                feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker)}.`,
+                feedback: () => `Your tracker has been updated successfully to ${trackerDataToString(tracker, timezone)}.`,
             });
             UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
         }

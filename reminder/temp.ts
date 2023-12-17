@@ -1,5 +1,5 @@
 import { Reminder, ReminderType } from "./db";
-import { formatDate, getRandomString, numberToTime, numberToTimeString } from '../utils/primitives';
+import { getRandomString, numberToTimeString } from '../utils/primitives';
 import { FrequencyType } from "../utils/schedule";
 
 type ReminderTemp = {
@@ -31,11 +31,12 @@ export class ReminderMemory {
         ReminderMemory.#reminders[chatId].time = time;
     }
 
-    static getReminder(chatId: number): string {
+    static getReminder(chatId: number, timezone: number): string {
         const result: string = `"${ReminderMemory.#reminders[chatId].content}" ${
             numberToTimeString(
                 ReminderMemory.#reminders[chatId].time,
                 ReminderMemory.#reminders[chatId].frequency,
+                timezone,
             )}`;
         delete ReminderMemory.#reminders[chatId];
         return result;
@@ -134,17 +135,17 @@ export class ReminderEditMemory {
         })).dataValues;
     }
 
-    static getReminder(chatId: number): [string, string] {
+    static getReminder(chatId: number, timezone: number): [string, string] {
         const { content, frequency, time } = ReminderEditMemory.#reminders[chatId];
         delete ReminderEditMemory.#reminders[chatId];
         if (content) {
             return ["content", "\"" + content + "\""];
         }
         if (frequency) {
-            return ["frequency", numberToTimeString(time, frequency)];
+            return ["frequency", numberToTimeString(time, frequency, timezone)];
         }
         if (time) {
-            return ["time", numberToTimeString(time, frequency)];
+            return ["time", numberToTimeString(time, frequency, timezone)];
         }
     }
 

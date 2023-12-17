@@ -69,9 +69,9 @@ export class TrackMemory {
         TrackMemory.#tracks[chatId].time = time;
     }
 
-    static getTracker(chatId: number): string {
+    static getTracker(chatId: number, timezone: number): string {
         const { link, caption, time, frequency } = TrackMemory.#tracks[chatId];
-        const result: string = `\`${link}\` ${numberToTimeString(time, frequency)} with caption "${caption}"`;
+        const result: string = `\`${link}\` ${numberToTimeString(time, frequency, timezone)} with caption "${caption}"`;
         delete TrackMemory.#tracks[chatId];
         return result;
     }

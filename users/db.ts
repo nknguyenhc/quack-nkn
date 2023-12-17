@@ -34,3 +34,9 @@ User.hasMany(Reminder, {
         allowNull: false,
     },
 });
+
+export const getTimezone = async (chatId: number): Promise<number> => (await User.findOne({
+    where: {
+        chatId: String(chatId),
+    },
+})).dataValues.timezone;
