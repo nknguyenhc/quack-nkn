@@ -11,7 +11,12 @@ import { dailyPoll, onceQuestion, weeklyPoll } from "./data";
 import { User } from "../users/db";
 
 const launchBrowserAndPage = async () => {
-    const browser = await launch();
+    const browser = await launch({
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox'
+        ]
+    });
     const page = await browser.newPage();
     page.setViewport({
         width: 1440,

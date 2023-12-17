@@ -116,7 +116,7 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
         allowPlain: false,
     }],
     [STATE.TIMEZONE, {
-        commands: [/^\/start$/, /^\/cancel$/, /^\/reminder$/, /^\/track$/, /^\/add$/, /^\/list$/, /^\/edit$/, /^\/delete$/],
+        commands: [/^\/start$/, /^\/cancel$/],
         errorMessage: 'Invalid command, here is the list of commands for adding timezone:\n'
             + '/start - show start message\n'
             + '/cancel - cancel adding timezone\n',

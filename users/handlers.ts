@@ -72,6 +72,7 @@ const timezoneHandler: PollAnswerHandler = {
                     chatId: String(chatId),
                 },
             });
+            UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
 
             bot.editMessageText(
                 `Alright, I have set your timezone to GMT${selectedOption >= 0 ? "+" + selectedOption : selectedOption}`,
