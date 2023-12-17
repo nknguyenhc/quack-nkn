@@ -55,7 +55,7 @@ export const listingAllTrackers = async ({
             userChatId: String(chatId),
         },
     });
-    tempSetter(allTrackers);
+    tempSetter && tempSetter(allTrackers);
     if (allTrackers.length === 0) {
         bot.sendMessage(chatId, "You have no website trackers yet.");
         UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
