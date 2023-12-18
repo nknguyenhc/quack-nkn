@@ -2,6 +2,7 @@ import { DataTypes, Model } from 'sequelize';
 import { getConnection } from '../utils/db';
 import { Reminder } from '../reminder/db';
 import dotenv from 'dotenv';
+import { Tracker } from '../tracker/db';
 
 dotenv.config();
 
@@ -29,6 +30,13 @@ export const User = sequelize.define<Model<UserType>>('User', {
 });
 
 User.hasMany(Reminder, {
+    foreignKey: {
+        name: 'userChatId',
+        allowNull: false,
+    },
+});
+
+User.hasMany(Tracker, {
     foreignKey: {
         name: 'userChatId',
         allowNull: false,

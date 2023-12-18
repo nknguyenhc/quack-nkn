@@ -5,6 +5,7 @@ import UserStates, { knownCommands } from "../utils/states";
 import { ReminderDeleteMemory, ReminderEditMemory, ReminderMemory } from "../reminder/temp";
 import { TrackDeleteMemory, TrackEditMemory, TrackMemory } from "../tracker/temp";
 import { timezonePoll } from './data';
+import { TimezoneTemp } from './temp';
 
 const startHandler: TextHandler = {
     command: /^\/start$/,
@@ -22,11 +23,17 @@ const startHandler: TextHandler = {
                     username: msg.chat.username,
                 });
             }
+        } else {
+            User.create({
+                chatId: String(chatId),
+                username: msg.chat.username,
+            });
         }
         bot.sendMessage(chatId, 
             'Hello! Welcome to quack-nkn!\n'
             + 'This bot helps you set reminders for yourself and track websites\n'
             + 'My boss is Nguyen, you can find out more about him here: https://nknguyenhc.github.io/ \n'
+            + 'Your timezone is defaulted to GMT+8. If this is not your timezone, reminder to change your timezone before using my services!\n'
             + 'Here is the list of available commands:\n'
             + '/start - show this message\n'
             + '/reminder - add, view, edit or delete your reminders\n'
@@ -44,6 +51,7 @@ const setTimezoneHandler: TextHandler = {
             UserStates.setUserState(chatId, UserStates.STATE.TIMEZONE);
 
             const timezone = await getTimezone(chatId);
+            TimezoneTemp.setCurrTimezone(chatId, timezone);
 
             bot.sendMessage(chatId, `Your current timezone is currently set to GMT${timezone >= 0 ? "+" + timezone : timezone}. ` + timezonePoll.question, {
                 reply_markup: {
@@ -57,23 +65,21 @@ const setTimezoneHandler: TextHandler = {
 };
 
 const timezoneHandler: PollAnswerHandler = {
-    handler: (bot: TelegramBot) => (query: CallbackQuery) => {
+    handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TIMEZONE) {
             const messageId = query.message!.message_id;
             const selectedOption = Number(query.data);
 
-            User.update({
-                timezone: selectedOption,
-            }, {
-                where: {
-                    chatId: String(chatId),
-                },
-            });
-            UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+            UserStates.setUserState(chatId, UserStates.STATE.TIMEZONE_CONFIRM);
+            TimezoneTemp.setFinalTimezone(chatId, selectedOption);
 
             bot.editMessageText(
-                `Alright, I have set your timezone to GMT${selectedOption >= 0 ? "+" + selectedOption : selectedOption}`,
+                `Alright, I will set your timezone to GMT${selectedOption >= 0 ? "+" + selectedOption : selectedOption}. `
+                    + 'Would you like to change your reminder and tracker timing according to your change in timezone?\n'
+                    + 'For example, if you say \"yes\", if you changed your timezone from GMT+7 to GMT+8, '
+                    + 'a reminder scheduled at 3PM will now be delivered at 4PM (in your local time); '
+                    + 'if you say \"no\", it will still be delivered at 3PM (in your local time).',
                 {
                     chat_id: chatId,
                     message_id: messageId,
@@ -81,7 +87,27 @@ const timezoneHandler: PollAnswerHandler = {
             );
         }
     }
-}
+};
+
+const timezoneConfirmHandler: PlainHandler = {
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserStates.getUserState(chatId) === UserStates.STATE.TIMEZONE_CONFIRM) {
+            const response = msg.text!.toLowerCase().trim();
+            if (response === 'yes' || response === 'y') {
+                setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.NORMAL), 100);
+                await TimezoneTemp.buildChange(chatId);
+                bot.sendMessage(chatId, "Ok, I have changed reminder and tracker timings according to your change in timezone.");
+            } else if (response === 'no' || response === 'n') {
+                setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.NORMAL), 100);
+                await TimezoneTemp.buildNoChange(chatId, bot);
+                bot.sendMessage(chatId, "Ok, I have kept your reminder and tracker timings as they are.");
+            } else {
+                bot.sendMessage(chatId, "Please confirm with either \"yes\" or \"no\"");
+            }
+        }
+    },
+};
 
 const cancelHandler: TextHandler = {
     command: /^\/cancel$/,
@@ -100,6 +126,7 @@ const cancelHandler: TextHandler = {
 
         UserStates.setUserQuestionId(chatId, 0);
         UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+        TimezoneTemp.cancel(chatId);
         ReminderMemory.deleteMemory(chatId);
         ReminderEditMemory.deleteMemory(chatId);
         ReminderDeleteMemory.deleteMemory(chatId);
@@ -185,6 +212,7 @@ export const textUserHandlers: Array<TextHandler> = [
 
 export const plainUserHandlers: Array<PlainHandler> = [
     errorHandler,
+    timezoneConfirmHandler,
 ];
 
 export const pollUserHandlers: Array<PollAnswerHandler> = [

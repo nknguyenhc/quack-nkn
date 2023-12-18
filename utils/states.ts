@@ -8,6 +8,7 @@ enum STATE {
 
     // timezone
     TIMEZONE,
+    TIMEZONE_CONFIRM,
 
     // reminder
     REMINDER_START,
@@ -117,10 +118,17 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
     }],
     [STATE.TIMEZONE, {
         commands: [/^\/start$/, /^\/cancel$/],
-        errorMessage: 'Invalid command, here is the list of commands for adding timezone:\n'
+        errorMessage: 'Invalid command, here is the list of commands for changing timezone:\n'
             + '/start - show start message\n'
             + '/cancel - cancel adding timezone\n',
         allowPlain: false,
+    }],
+    [STATE.TIMEZONE_CONFIRM, {
+        commands: [/^\/start$/, /^\/cancel$/],
+        errorMessage: 'Invalid command, here is the list of commands for changing timezone:\n'
+            + '/start - show start message\n'
+            + '/cancel - cancel adding timezone\n',
+        allowPlain: true,
     }],
     [STATE.REMINDER_START, {
         commands: [/^\/start$/, /^\/cancel$/, /^\/add$/, /^\/list$/, /^\/edit$/, /^\/delete$/],

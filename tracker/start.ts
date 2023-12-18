@@ -2,7 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import { StartBotJob } from '../utils/types';
 import { Tracker } from './db';
 import { setReminder } from '../utils/schedule';
-import { launch } from 'puppeteer';
+import { launchBrowserAndPage } from './functions';
 import { getRandomString } from '../utils/primitives';
 import { unlink } from 'fs';
 import { User } from '../users/db';
@@ -15,17 +15,13 @@ const trackStartJob: StartBotJob = async (bot: TelegramBot) => {
         }
         const { id, address, selector, selectorIndex, caption, frequency, time, userChatId } = tracker.dataValues;
         const job = async () => {
-            const browser = await launch();
-            const page = await browser.newPage();
-            page.setViewport({
-                width: 1440,
-                height: 715,
-            });
+            const { browser, page } = await launchBrowserAndPage();
             
             try {
                 await page.goto(address);
             } catch (e) {
                 bot.sendMessage(userChatId, `Oops, looks like the page at ${address} has been removed.`);
+                browser.close();
                 return;
             }
 
@@ -47,6 +43,7 @@ const trackStartJob: StartBotJob = async (bot: TelegramBot) => {
             await page.screenshot({
                 path: './media/' + filename + '.jpg',
             });
+            browser.close();
             bot.sendPhoto(userChatId, 'media/' + filename + '.jpg', {
                 caption: caption,
             }).then(() => {

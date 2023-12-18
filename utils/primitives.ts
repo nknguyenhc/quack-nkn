@@ -87,6 +87,46 @@ export const weeklyNumberToString = (number: number): string => {
     return `every week ${dayString} ${timeString}`;
 }
 
+export const timeDailyDelta = (time: number, delta: number): number => (time + delta + 24) % 24;
+
+export const timeWeeklyDelta = (time: number, delta: number): number => {
+    let currTime = Math.floor(time / 4) * 24;
+    switch (time % 4) {
+        case 0:
+            currTime += 6;
+            break;
+        case 1:
+            currTime += 12;
+            break;
+        case 2:
+            currTime += 18;
+            break;
+        case 3:
+            currTime += 22;
+            break;
+    }
+
+    let newTime = (currTime + delta + 24 * 7) % (24 * 7);
+    const newDay = Math.floor(newTime / 24);
+    let newHour = newTime % 24;
+    if (0 <= newHour && newHour <= 1) {
+        newHour = -1;
+    } else if (2 <= newHour && newHour <= 8) {
+        newHour = 0;
+    } else if (9 <= newHour && newHour <= 14) {
+        newHour = 1;
+    } else if (15 <= newHour && newHour <= 19) {
+        newHour = 2;
+    } else {
+        newHour = 3;
+    }
+
+    newTime = (newDay * 4 + newHour + 28) % 28;
+    return newTime;
+};
+
+export const timeOnceDelta = (time: number, delta: number): number => time + delta * 3600;
+
 export const parseDateTime = (str: string, timezone: number): Date | undefined => {
     const splitBySpace = str.split(' ');
     if (splitBySpace.length !== 2) {

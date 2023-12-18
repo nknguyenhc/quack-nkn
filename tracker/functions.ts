@@ -10,7 +10,7 @@ import { FrequencyType, setReminder } from "../utils/schedule";
 import { dailyPoll, onceQuestion, weeklyPoll } from "./data";
 import { getTimezone } from "../users/db";
 
-const launchBrowserAndPage = async () => {
+export const launchBrowserAndPage = async () => {
     const browser = await launch({
         args: [
             '--no-sandbox',
