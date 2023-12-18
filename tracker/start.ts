@@ -4,8 +4,8 @@ import { Tracker } from './db';
 import { setReminder } from '../utils/schedule';
 import { launchBrowserAndPage } from './functions';
 import { getRandomString } from '../utils/primitives';
-import { unlink } from 'fs';
 import { User } from '../users/db';
+import { sendPhoto } from '../utils/bot';
 
 const trackStartJob: StartBotJob = async (bot: TelegramBot) => {
     const trackers = await Tracker.findAll();
@@ -44,10 +44,11 @@ const trackStartJob: StartBotJob = async (bot: TelegramBot) => {
                 path: './media/' + filename + '.jpg',
             });
             browser.close();
-            bot.sendPhoto(userChatId, 'media/' + filename + '.jpg', {
+            sendPhoto({
+                bot: bot,
+                chatId: Number(userChatId),
+                filename: filename,
                 caption: caption,
-            }).then(() => {
-                unlink('media/' + filename + '.jpg', () => {});
             });
         };
         const isValid = () => Tracker.findOne({

@@ -4,8 +4,8 @@ import { getRandomString, timeDailyDelta, timeWeeklyDelta, timeOnceDelta } from 
 import { setReminder } from '../utils/schedule';
 import { Tracker } from '../tracker/db';
 import { launchBrowserAndPage } from '../tracker/functions';
-import { unlink } from 'fs';
 import { User } from './db';
+import { sendPhoto } from '../utils/bot';
 
 type TimezoneDict = {
     [key: number]: {
@@ -130,10 +130,11 @@ export class TimezoneTemp {
                     path: './media/' + filename + '.jpg',
                 });
                 browser.close();
-                bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
+                sendPhoto({
+                    bot: bot,
+                    filename: filename,
+                    chatId: chatId,
                     caption: caption,
-                }).then(() => {
-                    unlink('media/' + filename + '.jpg', () => {});
                 });
             };
             const isValid = () => Tracker.findOne({

@@ -8,5 +8,6 @@ export const getConnection = () => new Sequelize(
         host: process.env.DATABASE_HOST as string,
         port: Number(process.env.DATABASE_PORT),
         dialect: 'postgres',
+        logging: false,
     }
 );

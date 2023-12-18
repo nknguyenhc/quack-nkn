@@ -4,14 +4,15 @@ import { Tracker, TrackerType } from "./db";
 import { getRandomString, numberToTimeString, parseDateTime } from "../utils/primitives";
 import TelegramBot, { CallbackQuery } from "node-telegram-bot-api";
 import UserStates from "../utils/states";
-import { unlink } from "fs";
 import { TrackEditMemory, TrackMemory } from "./temp";
 import { FrequencyType, setReminder } from "../utils/schedule";
 import { dailyPoll, onceQuestion, weeklyPoll } from "./data";
 import { getTimezone } from "../users/db";
+import { sendPhoto } from '../utils/bot';
 
 export const launchBrowserAndPage = async () => {
     const browser = await launch({
+        headless: 'new',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox'
@@ -142,10 +143,11 @@ const screenshot = async ({
     await page.screenshot({
         path: './media/' + filename + '.jpg',
     });
-    bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
+    sendPhoto({
+        bot: bot,
+        chatId: chatId,
+        filename: filename,
         caption: caption,
-    }).then(() => {
-        unlink('media/' + filename + '.jpg', () => {});
     });
 }
 
