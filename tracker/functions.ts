@@ -1,7 +1,7 @@
 import { ElementHandle, NodeFor, Page, launch } from "puppeteer";
 import { Model } from "sequelize";
 import { Tracker, TrackerType } from "./db";
-import { getRandomString, numberToTimeString, parseDateTime } from "../utils/primitives";
+import { getRandomString, numberToTimeString, parseDateTime, sleep } from "../utils/primitives";
 import TelegramBot, { CallbackQuery } from "node-telegram-bot-api";
 import UserStates from "../utils/states";
 import { TrackEditMemory, TrackMemory } from "./temp";
@@ -143,6 +143,7 @@ export const screenshot = async ({
 }) => {
     const filename = getRandomString();
     Logger.getInfoLogger().log(`Saving page screenshot at file ${filename}.jpg`);
+    await sleep(2);
     await page.screenshot({
         path: './media/' + filename + '.jpg',
     });
@@ -469,6 +470,16 @@ export const buildVisitJob = async ({
     frequency: FrequencyType,
     feedback: () => string,
 }) => {
+    const loggingInfo = JSON.stringify({
+        id: id,
+        link: link,
+        selector: selector,
+        index: index,
+        frequency: frequency,
+        number: number,
+        caption: caption,
+    });
+    Logger.getInfoLogger().log(`Setting up tracker for user ${chatId} with the following information: ${loggingInfo}`);
     const isValid = () => Tracker.findOne({
         where: {
             id: id,

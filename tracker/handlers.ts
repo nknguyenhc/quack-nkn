@@ -781,7 +781,7 @@ const trackDeleteIndexHandler: PlainHandler = {
             const isDeleted = TrackDeleteMemory.deleteTracker(chatId, index);
             if (await isDeleted) {
                 UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
-                bot.sendMessage(chatId, `Alright, reminder ${index} has been deleted.`);
+                bot.sendMessage(chatId, `Alright, tracker ${index} has been deleted.`);
             } else {
                 bot.sendMessage(chatId, `Index must be an integer between 1 and ${TrackDeleteMemory.getTrackerCount(chatId)}.`);
             }

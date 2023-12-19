@@ -19,8 +19,10 @@ export const sendPhoto = ({
         contentType: 'image/jpeg',
     }).then(() => {
         unlink('media/' + filename + '.jpg', (err) => {
-            Logger.getWarningLogger().log(`Failed to delete ${filename}.jpg, encountered the following error: ${err.message}`);
-            Logger.getDebugLogger().log(`Stacktrace: ${err.stack}`);
+            if (err) {
+                Logger.getWarningLogger().log(`Failed to delete ${filename}.jpg, encountered the following error: ${err.message}`);
+                Logger.getDebugLogger().log(`Stacktrace: ${err.stack}`);
+            }
         });
     });
 };

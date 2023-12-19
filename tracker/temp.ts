@@ -2,6 +2,7 @@ import { Model } from "sequelize";
 import { getRandomString, numberToTimeString } from "../utils/primitives";
 import { FrequencyType } from "../utils/schedule";
 import { Tracker, TrackerType } from './db';
+import Logger from "../logging/logger";
 
 type TrackType = {
     link?: string,
@@ -279,10 +280,12 @@ export class TrackDeleteMemory {
     static async deleteTracker(chatId: number, index: number) {
         const { trackers } = TrackDeleteMemory.#trackers[chatId];
         if (!isNaN(index) && index > 0 && index <= trackers.length) {
+            const idToDelete = trackers[index - 1].id;
+            Logger.getInfoLogger().log(`Deleting tracker for user ${chatId} with the following id: ${idToDelete}`);
             await Tracker.destroy({
                 where: {
                     userChatId: String(chatId),
-                    id: trackers[index - 1].id,
+                    id: idToDelete,
                 },
             });
             delete TrackDeleteMemory.#trackers[chatId];
