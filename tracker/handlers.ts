@@ -6,12 +6,14 @@ import { confirmErrorMessage, frequencyPoll } from './data';
 import { TrackDeleteMemory, TrackEditMemory, TrackMemory } from './temp';
 import { buildVisitJob, checkDateString, frequencyHandler, listingAllTrackers, setEditedVisitJob, setVisitJob, trackerDataToString, visitLinkAndScreenshot, visitLinkAndScrollToSelector, visitLinkAndScrollToSelectorIndex } from './functions';
 import { getTimezone } from '../users/db';
+import Logger from '../logging/logger';
 
 const trackHandler: TextHandler = {
     command: /^\/track$/,
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
+            Logger.getInfoLogger().commandLog(chatId, "/track");
             UserStates.setUserState(chatId, UserStates.STATE.TRACK_START);
             bot.sendMessage(chatId, "What do you wish to do?\n"
                 + "/add - add a new website tracker\n"
@@ -27,6 +29,7 @@ const trackAddHandler: TextHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_START) {
+            Logger.getInfoLogger().commandLog(chatId, "/add");
             UserStates.setUserState(chatId, UserStates.STATE.TRACK_ADD);
             bot.sendMessage(chatId, "Alright, give me the address of the website that you wish to track.\n"
                 + "In your message, send the address of the website only. Do not add any extra text.\n"
@@ -41,6 +44,7 @@ const addTrackHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.ADD) {
+            Logger.getInfoLogger().commandLog(chatId, "/track");
             UserStates.setUserState(chatId, UserStates.STATE.TRACK_ADD);
             bot.sendMessage(chatId, "Alright, give me the address of the website that you wish to track.\n"
                 + "In your message, send the address of the website only. Do not add any extra text.\n"
@@ -55,6 +59,7 @@ const trackListHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_START) {
+            Logger.getInfoLogger().commandLog(chatId, "/list");
             if (await listingAllTrackers({
                 bot: bot,
                 chatId: chatId,
@@ -70,6 +75,7 @@ const listTrackHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.LIST) {
+            Logger.getInfoLogger().commandLog(chatId, "/track");
             if (await listingAllTrackers({
                 bot: bot,
                 chatId: chatId,
@@ -84,6 +90,7 @@ const trackAddressHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_ADD) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const link = msg.text!;
             bot.sendMessage(chatId, "Alright, give me a second.");
             TrackMemory.addUser(chatId);
@@ -104,6 +111,7 @@ const trackConfirmHandler: PlainHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_CONFIRM) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const reply = msg.text!.toLowerCase().trim();
             if (reply === 'yes' || reply === 'y') {
                 setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_SELECTOR), 100);
@@ -130,6 +138,7 @@ const querySelectorInfoHandler: TextHandler = {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_SELECTOR
                 || UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_SELECTOR) {
+            Logger.getInfoLogger().commandLog(chatId, "/selector");
             bot.sendMessage(chatId, "The query selector must be such that when I run `document.querySelectorAll(yourQuerySelector)` "
                 + "in the javascript console on the page, the HTML element should be in the result list. "
                 + "For example, if you give me \"div.box\", I will find all HTML div elements with class name \"box\", "
@@ -144,6 +153,7 @@ const trackSelectorHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_SELECTOR) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const selector = msg.text!;
 
             if (selector === 'top') {
@@ -182,6 +192,7 @@ const trackSelectorIndexHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_INDEX) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             visitLinkAndScrollToSelectorIndex({
                 indexString: msg.text!,
                 bot: bot,
@@ -207,6 +218,7 @@ const trackSelectorConfirmHandler: PlainHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_SELECTOR_CONFIRM) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const reply = msg.text!.toLowerCase().trim();
             if (reply === 'yes' || reply === 'y') {
                 setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_CAPTION), 100);
@@ -225,6 +237,7 @@ const trackCaptionHandler: PlainHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_CAPTION) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const caption = msg.text!;
             TrackMemory.setCaption(chatId, caption);
             setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_FREQUENCY));
@@ -243,6 +256,7 @@ const trackFrequencyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_FREQUENCY) {
+            Logger.getInfoLogger().pollAnswerLog(chatId, query.data);
             frequencyHandler({
                 bot: bot,
                 chatId: chatId,
@@ -260,6 +274,7 @@ const trackDailyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_DAILY) {
+            Logger.getInfoLogger().pollAnswerLog(chatId, query.data);
             await setVisitJob({
                 query: query,
                 bot: bot,
@@ -276,6 +291,7 @@ const trackWeeklyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_WEEKLY) {
+            Logger.getInfoLogger().pollAnswerLog(chatId, query.data);
             await setVisitJob({
                 query: query,
                 bot: bot,
@@ -292,6 +308,7 @@ const trackOnceHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_ONCE) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const date = await checkDateString({
                 string: msg.text!,
                 bot: bot,
@@ -325,6 +342,7 @@ const trackEditHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_START) {
+            Logger.getInfoLogger().commandLog(chatId, "/edit");
             const isNonEmptyList = await listingAllTrackers({
                 bot: bot,
                 chatId: chatId,
@@ -346,6 +364,7 @@ const editTrackHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.EDIT) {
+            Logger.getInfoLogger().commandLog(chatId, "/track");
             const isNonEmptyList = await listingAllTrackers({
                 bot: bot,
                 chatId: chatId,
@@ -366,6 +385,7 @@ const trackEditTrackerIndexHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const trackerIndex = Number(msg.text);
             const edited = TrackEditMemory.setTrackerIndex(chatId, trackerIndex);
             if (!edited) {
@@ -388,6 +408,7 @@ const trackEditLinkCommandHandler: TextHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_TYPE) {
+            Logger.getInfoLogger().commandLog(chatId, "/link");
             UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_LINK);
             bot.sendMessage(chatId, "Alright, give me the address of the website that you wish to track.\n"
                 + "In your message, send the address of the website only. Do not add any extra text.\n");
@@ -399,6 +420,7 @@ const trackEditLinkHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_LINK) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const link = msg.text!;
             bot.sendMessage(chatId, 'Alright, give me a second.');
             TrackEditMemory.setLink(chatId, link);
@@ -418,6 +440,7 @@ const trackEditLinkConfirmHandler: PlainHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_LINK_CONFIRM) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const reply = msg.text!.toLowerCase().trim();
             if (reply === 'yes' || reply === 'y') {
                 setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_SELECTOR), 100);
@@ -443,6 +466,7 @@ const trackEditSelectorCommandHandler: TextHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_TYPE) {
+            Logger.getInfoLogger().commandLog(chatId, "/selector");
             setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_SELECTOR), 100);
             bot.sendMessage(chatId, "Alright, what is the new selector for your tracker?\n"
                 + "If you do not need me to scroll down, simply type \"top\"\n"
@@ -457,6 +481,7 @@ const trackEditSelectorHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_SELECTOR) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const selector = msg.text!;
 
             if (selector === 'top') {
@@ -507,6 +532,7 @@ const trackEditSelectorIndexHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_INDEX) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             visitLinkAndScrollToSelectorIndex({
                 indexString: msg.text!,
                 bot: bot,
@@ -532,6 +558,7 @@ const trackEditSelectorConfirmHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_SELECTOR_CONFIRM) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const reply = msg.text!.toLowerCase().trim();
             if (reply === 'yes' || reply === 'y') {
                 const tracker = await TrackEditMemory.build(chatId);
@@ -565,6 +592,7 @@ const trackEditCaptionCommandHandler: TextHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_TYPE) {
+            Logger.getInfoLogger().commandLog(chatId, "/caption");
             UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_CAPTION);
             bot.sendMessage(chatId, "What is the new caption you want to put for your tracker?");
         }
@@ -575,6 +603,7 @@ const trackEditCaptionHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_CAPTION) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             TrackEditMemory.setCaption(chatId, msg.text!);
 
             const tracker = await TrackEditMemory.build(chatId);
@@ -602,6 +631,7 @@ const trackEditFrequencyCommandHandler: TextHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_TYPE) {
+            Logger.getInfoLogger().commandLog(chatId, "/frequency");
             setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.TRACK_EDIT_FREQUENCY), 100);
             bot.sendMessage(chatId, frequencyPoll.question, {
                 reply_markup: {
@@ -618,6 +648,7 @@ const trackEditFrequencyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_FREQUENCY) {
+            Logger.getInfoLogger().pollAnswerLog(chatId, query.data);
             frequencyHandler({
                 bot: bot,
                 chatId: chatId,
@@ -635,6 +666,7 @@ const trackEditDailyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_DAILY) {
+            Logger.getInfoLogger().pollAnswerLog(chatId, query.data);
             await setEditedVisitJob({
                 query: query,
                 bot: bot,
@@ -650,6 +682,7 @@ const trackEditWeeklyHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_WEEKLY) {
+            Logger.getInfoLogger().pollAnswerLog(chatId, query.data);
             await setEditedVisitJob({
                 query: query,
                 bot: bot,
@@ -665,6 +698,7 @@ const trackEditOnceHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_EDIT_ONCE) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const date = await checkDateString({
                 string: msg.text!,
                 bot: bot,
@@ -699,6 +733,7 @@ const trackDeleteHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_START) {
+            Logger.getInfoLogger().commandLog(chatId, "/delete");
             const isNonEmptyList = await listingAllTrackers({
                 bot: bot,
                 chatId: chatId,
@@ -720,6 +755,7 @@ const deleteTrackHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.DELETE) {
+            Logger.getInfoLogger().commandLog(chatId, "/track");
             const isNonEmptyList = await listingAllTrackers({
                 bot: bot,
                 chatId: chatId,
@@ -740,6 +776,7 @@ const trackDeleteIndexHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TRACK_DELETE) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const index = Number(msg.text);
             const isDeleted = TrackDeleteMemory.deleteTracker(chatId, index);
             if (await isDeleted) {

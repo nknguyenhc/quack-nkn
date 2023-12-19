@@ -2,7 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import { StartBotJob } from '../utils/types';
 import { Tracker } from './db';
 import { setReminder } from '../utils/schedule';
-import { launchBrowserAndPage } from './functions';
+import { checkPageValidity, launchBrowserAndPage, screenshot } from './functions';
 import { getRandomString } from '../utils/primitives';
 import { User } from '../users/db';
 import { sendPhoto } from '../utils/bot';
@@ -16,11 +16,11 @@ const trackStartJob: StartBotJob = async (bot: TelegramBot) => {
         const { id, address, selector, selectorIndex, caption, frequency, time, userChatId } = tracker.dataValues;
         const job = async () => {
             const { browser, page } = await launchBrowserAndPage();
-            
-            try {
-                await page.goto(address);
-            } catch (e) {
-                bot.sendMessage(userChatId, `Oops, looks like the page at ${address} has been removed.`);
+            if (!await checkPageValidity({
+                page: page,
+                link: address,
+                invalidHandler: () => bot.sendMessage(userChatId, `Oops, looks like the page at ${address} has been removed.`),
+            })) {
                 browser.close();
                 return;
             }
@@ -39,17 +39,13 @@ const trackStartJob: StartBotJob = async (bot: TelegramBot) => {
                 }
             }
 
-            const filename = getRandomString();
-            await page.screenshot({
-                path: './media/' + filename + '.jpg',
-            });
-            browser.close();
-            sendPhoto({
+            screenshot({
+                page: page,
                 bot: bot,
                 chatId: Number(userChatId),
-                filename: filename,
                 caption: caption,
             });
+            browser.close();
         };
         const isValid = () => Tracker.findOne({
             where: {

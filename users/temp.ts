@@ -3,7 +3,7 @@ import { Reminder } from '../reminder/db';
 import { getRandomString, timeDailyDelta, timeWeeklyDelta, timeOnceDelta } from '../utils/primitives';
 import { setReminder } from '../utils/schedule';
 import { Tracker } from '../tracker/db';
-import { launchBrowserAndPage } from '../tracker/functions';
+import { checkPageValidity, launchBrowserAndPage, screenshot } from '../tracker/functions';
 import { User } from './db';
 import { sendPhoto } from '../utils/bot';
 
@@ -102,11 +102,11 @@ export class TimezoneTemp {
 
             const job = async () => {
                 const { browser, page } = await launchBrowserAndPage();
-
-                try {
-                    await page.goto(address);
-                } catch (e) {
-                    bot.sendMessage(chatId, `Oops, looks like the page at ${address} has been removed.`);
+                if (!await checkPageValidity({
+                    page: page,
+                    link: address,
+                    invalidHandler: () => bot.sendMessage(chatId, `Oops, looks like the page at ${address} has been removed.`),
+                })) {
                     browser.close();
                     return;
                 }
@@ -125,17 +125,13 @@ export class TimezoneTemp {
                     }
                 }
 
-                const filename = getRandomString();
-                await page.screenshot({
-                    path: './media/' + filename + '.jpg',
-                });
-                browser.close();
-                sendPhoto({
+                screenshot({
+                    page: page,
                     bot: bot,
-                    filename: filename,
                     chatId: chatId,
                     caption: caption,
                 });
+                browser.close();
             };
             const isValid = () => Tracker.findOne({
                 where: { id: newId },

@@ -1,3 +1,5 @@
+import Logger from "../logging/logger";
+
 enum STATE {
     // normal
     NORMAL,
@@ -431,6 +433,7 @@ class UserStates {
     }
 
     static setUserState(chatId: number, state: STATE): void {
+        Logger.getDebugLogger().log(`Changing state of user ${chatId} to ${STATE[state]}`);
         if (state === STATE.NORMAL) {
             delete UserStates.#states[chatId];
             return;

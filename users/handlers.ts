@@ -6,17 +6,20 @@ import { ReminderDeleteMemory, ReminderEditMemory, ReminderMemory } from "../rem
 import { TrackDeleteMemory, TrackEditMemory, TrackMemory } from "../tracker/temp";
 import { timezonePoll } from './data';
 import { TimezoneTemp } from './temp';
+import Logger from "../logging/logger";
 
 const startHandler: TextHandler = {
     command: /^\/start$/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId: number = msg.chat.id;
+        Logger.getInfoLogger().commandLog(chatId, "/start");
         const users = await User.findAll({
             where: {
                 chatId: String(chatId),
             }
         });
         if (users.length > 0) {
+            Logger.getInfoLogger().log(`User ${chatId} is an old user.`);
             const user = users[0];
             if (msg.chat.username && user.dataValues.username !== msg.chat.username) {
                 user.update({
@@ -24,6 +27,7 @@ const startHandler: TextHandler = {
                 });
             }
         } else {
+            Logger.getInfoLogger().log(`User ${chatId} is a new user.`);
             User.create({
                 chatId: String(chatId),
                 username: msg.chat.username,
@@ -48,6 +52,7 @@ const setTimezoneHandler: TextHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId: number = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
+            Logger.getInfoLogger().commandLog(chatId, "/timezone");
             UserStates.setUserState(chatId, UserStates.STATE.TIMEZONE);
 
             const timezone = await getTimezone(chatId);
@@ -68,6 +73,7 @@ const timezoneHandler: PollAnswerHandler = {
     handler: (bot: TelegramBot) => async (query: CallbackQuery) => {
         const chatId = query.message!.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TIMEZONE) {
+            Logger.getInfoLogger().pollAnswerLog(chatId, query.data);
             const messageId = query.message!.message_id;
             const selectedOption = Number(query.data);
 
@@ -93,6 +99,7 @@ const timezoneConfirmHandler: PlainHandler = {
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.TIMEZONE_CONFIRM) {
+            Logger.getInfoLogger().messageLog(chatId, msg.text);
             const response = msg.text!.toLowerCase().trim();
             if (response === 'yes' || response === 'y') {
                 setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.NORMAL), 100);
@@ -113,6 +120,7 @@ const cancelHandler: TextHandler = {
     command: /^\/cancel$/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
+        Logger.getInfoLogger().commandLog(chatId, "/cancel");
 
         if (UserStates.getUserQuestionId(chatId)) {
             bot.editMessageText(
@@ -142,6 +150,7 @@ const addHandler: TextHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
+            Logger.getInfoLogger().commandLog(chatId, "/add");
             UserStates.setUserState(chatId, UserStates.STATE.ADD);
             bot.sendMessage(chatId, 'What do you wish to add?'
                     + '\n/reminder - add a new reminder'
@@ -155,6 +164,7 @@ const listHandler: TextHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
+            Logger.getInfoLogger().commandLog(chatId, "/list");
             UserStates.setUserState(chatId, UserStates.STATE.LIST);
             bot.sendMessage(chatId, 'What do you wish to view?'
                     + '\n/reminder - view your list of reminders'
@@ -168,6 +178,7 @@ const editHandler: TextHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
+            Logger.getInfoLogger().commandLog(chatId, "/edit");
             UserStates.setUserState(chatId, UserStates.STATE.EDIT);
             bot.sendMessage(chatId, 'What do you wish to edit?'
                     + '\n/reminder - edit one of your reminders'
@@ -181,6 +192,7 @@ const deleteHandler: TextHandler = {
     handler: (bot: TelegramBot) => (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserStates.getUserState(chatId) === UserStates.STATE.NORMAL) {
+            Logger.getInfoLogger().commandLog(chatId, "/delete");
             UserStates.setUserState(chatId, UserStates.STATE.DELETE);
             bot.sendMessage(chatId, 'What do you wish to delete?'
                     + '\n/reminder - delete one of your reminders'
@@ -195,6 +207,7 @@ const errorHandler: PlainHandler = {
         const stateInfo = knownCommands.get(UserStates.getUserState(chatId))!;
         if (!stateInfo.commands.some(regex => msg.text?.match(regex))
                 && (!stateInfo.allowPlain || msg.text?.startsWith("/"))) {
+            Logger.getInfoLogger().log(`User ${chatId} executed an unknown command: \"${msg.text}\"`);
             bot.sendMessage(chatId, stateInfo.errorMessage);
         }
     }

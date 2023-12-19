@@ -1,5 +1,6 @@
 import { unlink } from "fs";
 import TelegramBot from "node-telegram-bot-api"
+import Logger from "../logging/logger";
 
 export const sendPhoto = ({
     bot,
@@ -17,6 +18,9 @@ export const sendPhoto = ({
     }, {
         contentType: 'image/jpeg',
     }).then(() => {
-        unlink('media/' + filename + '.jpg', () => {});
+        unlink('media/' + filename + '.jpg', (err) => {
+            Logger.getWarningLogger().log(`Failed to delete ${filename}.jpg, encountered the following error: ${err.message}`);
+            Logger.getDebugLogger().log(`Stacktrace: ${err.stack}`);
+        });
     });
 };

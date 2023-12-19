@@ -8,6 +8,7 @@ import { User } from './users/db';
 import { Reminder } from './reminder/db';
 import { Tracker } from './tracker/db';
 import trackStartJob from './tracker/start';
+import Logger from './logging/logger';
 
 dotenv.config();
 
@@ -62,6 +63,8 @@ function main() {
     trackPollHandler.forEach((handler) => {
         bot.on('callback_query', handler.handler(bot));
     });
+
+    Logger.getInfoLogger().log("Bot is ready to receive requests.");
 }
 
 async function migrate() {

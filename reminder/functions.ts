@@ -7,6 +7,7 @@ import { FrequencyType, setReminder } from "../utils/schedule";
 import { dailyPoll, onceQuestion, weeklyPoll } from "./data";
 import { ReminderEditMemory, ReminderMemory } from "./temp";
 import { getTimezone } from "../users/db";
+import Logger from "../logging/logger";
 
 const reminderDataToString = (reminder: Model<ReminderType, ReminderType>, timezone: number): string => {
     return `${
@@ -184,6 +185,13 @@ export const addReminderWithNumber = async ({
         }
     }).then(reminder => reminder !== null);
     const job = () => bot.sendMessage(chatId, message);
+    const loggingInfo = JSON.stringify({
+        id: id,
+        frequency: frequency,
+        number: number,
+        message: message,
+    });
+    Logger.getInfoLogger().log(`Adding reminder for user ${chatId} with the following information: ${loggingInfo}`);
 
     const timezone = await getTimezone(chatId);
     setReminder({
@@ -237,6 +245,13 @@ export const editReminderWithNumber = async ({
         where: { id: id },
     }).then(reminder => reminder !== null);
     const job = () => bot.sendMessage(chatId, content);
+    const loggingInfo = JSON.stringify({
+        id: id,
+        frequency: frequency,
+        number: time,
+        message: content,
+    });
+    Logger.getInfoLogger().log(`Editing reminder for user ${chatId} with the following information: ${loggingInfo}`);
 
     const timezone = await getTimezone(chatId);
     setReminder({

@@ -9,6 +9,7 @@ import { FrequencyType, setReminder } from "../utils/schedule";
 import { dailyPoll, onceQuestion, weeklyPoll } from "./data";
 import { getTimezone } from "../users/db";
 import { sendPhoto } from '../utils/bot';
+import Logger from "../logging/logger";
 
 export const launchBrowserAndPage = async () => {
     const browser = await launch({
@@ -110,7 +111,7 @@ export const visitLinkAndScreenshot = async ({
     turnNextState();
 };
 
-const checkPageValidity = async ({
+export const checkPageValidity = async ({
     page,
     link,
     invalidHandler,
@@ -120,6 +121,7 @@ const checkPageValidity = async ({
     invalidHandler: () => void,
 }): Promise<boolean> => {
     try {
+        Logger.getInfoLogger().log(`Visiting link: ${link}`);
         await page.goto(link);
         return true;
     } catch (e) {
@@ -128,7 +130,7 @@ const checkPageValidity = async ({
     }
 };
 
-const screenshot = async ({
+export const screenshot = async ({
     page,
     bot,
     chatId,
@@ -140,6 +142,7 @@ const screenshot = async ({
     caption: string,
 }) => {
     const filename = getRandomString();
+    Logger.getInfoLogger().log(`Saving page screenshot at file ${filename}.jpg`);
     await page.screenshot({
         path: './media/' + filename + '.jpg',
     });

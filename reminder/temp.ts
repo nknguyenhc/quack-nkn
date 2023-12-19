@@ -1,6 +1,7 @@
 import { Reminder, ReminderType } from "./db";
 import { getRandomString, numberToTimeString } from '../utils/primitives';
 import { FrequencyType } from "../utils/schedule";
+import Logger from "../logging/logger";
 
 type ReminderTemp = {
     content?: string,
@@ -172,10 +173,12 @@ export class ReminderDeleteMemory {
     static async deleteReminder(chatId: number, index: number) {
         const { reminders } = ReminderDeleteMemory.#reminders[chatId];
         if (!isNaN(index) && index > 0 && index <= reminders.length) {
+            const idToDelete = reminders[index - 1];
+            Logger.getInfoLogger().log(`Deleting reminder for user ${chatId} with the following id: ${idToDelete}`);
             await Reminder.destroy({
                 where: {
                     userChatId: String(chatId),
-                    id: reminders[index - 1],
+                    id: idToDelete,
                 },
             });
             delete ReminderDeleteMemory.#reminders[chatId];
