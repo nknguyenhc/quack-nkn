@@ -44,6 +44,7 @@ jspm_packages/
 media/
 templates/
 static/
+styles-compiled/
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/

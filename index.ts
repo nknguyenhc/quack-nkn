@@ -11,7 +11,8 @@ import trackStartJob from './tracker/start';
 import Logger from './logging/logger';
 import express from "express";
 import pug from "pug";
-import { appendFileSync, readFile, readFileSync, readdir, writeFile, writeFileSync } from "fs";
+import { appendFileSync, readFileSync, readdir, writeFile, writeFileSync } from "fs";
+import sass from "node-sass";
 
 dotenv.config();
 
@@ -75,7 +76,8 @@ function serve() {
 
     compilePugFiles();
     combineFiles('scripts', 'static/index.js');
-    combineFiles('styles', 'static/index.css');
+    compileStyles();
+    combineFiles('styles-compiled', 'static/index.css');
 
     app.use('/static', express.static('static'));
 
@@ -115,9 +117,41 @@ function combineFiles(folder: string, outFile: string) {
                 const data = readFileSync(`${folder}/${filename}`);
                 appendFileSync(outFile, data);
             });
-            Logger.getInfoLogger().log(`Successfully compiled all files from "${folder}" into "${outFile}"`);
+            Logger.getInfoLogger().log(`Successfully combined all files from "${folder}" into "${outFile}"`);
         }
     });
+}
+
+function compileStyles() {
+    readdir('styles', (err, files) => {
+        if (err) {
+            Logger.getErrorLogger().log(`Failed to read "styles" directory.`);
+            Logger.getDebugLogger().log(err);
+        } else {
+            Logger.getInfoLogger().log(`Reading files from "styles" directory.`);
+            files.forEach(filename => {
+                const name = filename.slice(0, -5);
+                sass.render({
+                    file: `styles/${filename}`,
+                }, (err, res) => {
+                    if (err) {
+                        Logger.getErrorLogger().log(`Failed to compile style ${filename}`);
+                        Logger.getDebugLogger().log(err);
+                    } else {
+                        writeFile(`styles-compiled/${name}.css`, res.css, (err) => {
+                            if (err) {
+                                Logger.getErrorLogger().log(`Failed to create ${name}.css`);
+                                Logger.getDebugLogger().log(err);
+                            } else {
+                                Logger.getInfoLogger().log(`Successfully compiled ${filename}`);
+                            }
+                        })
+                    }
+                });
+            });
+            Logger.getInfoLogger().log(`Successfully compiled all style files.`);
+        }
+    })
 }
 
 async function migrate() {
