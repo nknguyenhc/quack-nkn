@@ -9,6 +9,9 @@ import { Reminder } from './reminder/db';
 import { Tracker } from './tracker/db';
 import trackStartJob from './tracker/start';
 import Logger from './logging/logger';
+import express from "express";
+import pug from "pug";
+import { appendFileSync, readFile, readFileSync, readdir, writeFile, writeFileSync } from "fs";
 
 dotenv.config();
 
@@ -67,6 +70,56 @@ function main() {
     Logger.getInfoLogger().log("Bot is ready to receive requests.");
 }
 
+function serve() {
+    const app = express();
+
+    compilePugFiles();
+    combineFiles('scripts', 'static/index.js');
+    combineFiles('styles', 'static/index.css');
+
+    app.use('/static', express.static('static'));
+
+    app.get('/', (req, res) => {
+        res.sendFile(__dirname + '/templates/index.html');
+    })
+
+    app.listen(process.env.PORT, () => Logger.getInfoLogger().log(`Server is listening on port ${process.env.PORT}`))
+}
+
+function compilePugFiles() {
+    const pugs = {
+        'index.pug': 'index.html',
+    };
+    for (const pugFile of Object.keys(pugs)) {
+        const compiledFunction = pug.compileFile(`pug/${pugFile}`);
+        writeFile(`templates/${pugs[pugFile]}`, compiledFunction(), (err) => {
+            if (err) {
+                Logger.getErrorLogger().log(`Failed to write HTML file ${pugs[pugFile]}`);
+                Logger.getDebugLogger().log(err);
+            } else {
+                Logger.getInfoLogger().log(`Successfully compiled ${pugFile} to ${pugs[pugFile]}`);
+            }
+        });
+    }
+}
+
+function combineFiles(folder: string, outFile: string) {
+    readdir(folder, (err, files) => {
+        if (err) {
+            Logger.getErrorLogger().log(`Failed to read "${folder}" directory.`);
+            Logger.getDebugLogger().log(err);
+        } else {
+            Logger.getInfoLogger().log(`Reading files from "${folder}" directory.`);
+            writeFileSync(outFile, "");
+            files.forEach(filename => {
+                const data = readFileSync(`${folder}/${filename}`);
+                appendFileSync(outFile, data);
+            });
+            Logger.getInfoLogger().log(`Successfully compiled all files from "${folder}" into "${outFile}"`);
+        }
+    });
+}
+
 async function migrate() {
     await User.sync({ alter: true });
     await Reminder.sync({ alter: true });
@@ -88,5 +141,12 @@ switch (process.argv[2]) {
         break;
     case 'bot':
         main();
+        break;
+    case 'serve':
+        serve();
+        break;
+    case 'both':
+        main();
+        serve();
         break;
 }
