@@ -3,9 +3,7 @@ import { StartBotJob } from '../utils/types';
 import { Tracker } from './db';
 import { setReminder } from '../utils/schedule';
 import { checkPageValidity, launchBrowserAndPage, screenshot } from './functions';
-import { getRandomString } from '../utils/primitives';
 import { User } from '../users/db';
-import { sendPhoto } from '../utils/bot';
 
 const trackStartJob: StartBotJob = async (bot: TelegramBot) => {
     const trackers = await Tracker.findAll();
@@ -39,7 +37,7 @@ const trackStartJob: StartBotJob = async (bot: TelegramBot) => {
                 }
             }
 
-            screenshot({
+            await screenshot({
                 page: page,
                 bot: bot,
                 chatId: Number(userChatId),

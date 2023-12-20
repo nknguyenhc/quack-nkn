@@ -125,7 +125,7 @@ export class TimezoneTemp {
                     }
                 }
 
-                screenshot({
+                await screenshot({
                     page: page,
                     bot: bot,
                     chatId: chatId,
