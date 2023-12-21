@@ -11,7 +11,7 @@ import trackStartJob from './tracker/start';
 import Logger from './logging/logger';
 import express from "express";
 import pug from "pug";
-import { appendFileSync, readFileSync, readdir, writeFile, writeFileSync } from "fs";
+import { appendFileSync, readFileSync, readdir, readdirSync, writeFile, writeFileSync } from "fs";
 import sass from "node-sass";
 
 dotenv.config();
@@ -74,6 +74,7 @@ function main() {
 function serve() {
     const app = express();
 
+    migrateFiles('assets', 'static/assets');
     compilePugFiles();
     combineFiles('scripts', 'static/index.js');
     compileStyles();
@@ -104,6 +105,26 @@ function serve() {
     app.listen(process.env.PORT, () => Logger.getInfoLogger().log(`Server is listening on port ${process.env.PORT}`))
 }
 
+function migrateFiles(source: string, dest: string) {
+    readdir(source, (err, files) => {
+        if (err) {
+            Logger.getErrorLogger().log(`Error opening folder "${source}"`);
+            Logger.getDebugLogger().log(err);
+        } else {
+            files.forEach(filename => {
+                const data = readFileSync(`${source}/${filename}`);
+                writeFile(`${dest}/${filename}`, data, (err) => {
+                    if (err) {
+                        Logger.getErrorLogger().log(`Error transferring file ${filename}`);
+                        Logger.getDebugLogger().log(err);
+                    }
+                });
+            });
+            Logger.getInfoLogger().log(`Successfully transferred files from "${source}" to "${dest}"`);
+        }
+    });
+}
+
 function compilePugFiles() {
     const pugs = {
         'index.pug': 'index.html',
@@ -130,7 +151,6 @@ function combineFiles(folder: string, outFile: string) {
             Logger.getErrorLogger().log(`Failed to read "${folder}" directory.`);
             Logger.getDebugLogger().log(err);
         } else {
-            Logger.getInfoLogger().log(`Reading files from "${folder}" directory.`);
             writeFileSync(outFile, "");
             files.forEach(filename => {
                 const data = readFileSync(`${folder}/${filename}`);
@@ -142,20 +162,13 @@ function combineFiles(folder: string, outFile: string) {
 }
 
 function compileStyles() {
-    readdir('styles', (err, files) => {
-        if (err) {
-            Logger.getErrorLogger().log(`Failed to read "styles" directory.`);
-            Logger.getDebugLogger().log(err);
-        } else {
-            Logger.getInfoLogger().log(`Reading files from "styles" directory.`);
-            files.forEach(filename => {
-                const name = filename.slice(0, -5);
-                const res = sass.renderSync({ file: `styles/${filename}` });
-                writeFileSync(`styles-compiled/${name}.css`, res.css);
-            });
-            Logger.getInfoLogger().log(`Successfully compiled all style files.`);
-        }
-    })
+    const files = readdirSync('styles')
+    files.forEach(filename => {
+        const name = filename.slice(0, -5);
+        const res = sass.renderSync({ file: `styles/${filename}` });
+        writeFileSync(`styles-compiled/${name}.css`, res.css);
+    });
+    Logger.getInfoLogger().log(`Successfully compiled all style files.`);
 }
 
 async function migrate() {
