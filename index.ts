@@ -93,6 +93,10 @@ function serve() {
         res.sendFile(__dirname + '/templates/feedback.html');
     });
 
+    app.get('/favicon.ico', (req, res) => {
+        res.sendFile(__dirname + '/icon.png');
+    });
+
     app.use('*', (req, res) => {
         res.status(400).sendFile(__dirname + '/templates/404.html');
     });
