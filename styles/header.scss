@@ -1,0 +1,22 @@
+.header {
+    background-color: #ff6cee;
+    padding: 15px 30px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 30px;
+
+    &-item {
+        padding: 8px;
+        transition: background-color 0.1s linear;
+        border-radius: 8px;
+        
+        &:hover {
+            background-color: white;
+        }
+
+        &-on {
+            background-color: #37e1ff;
+        }
+    }
+}

@@ -1,0 +1,4 @@
+mixin header
+    .header(x-data="header")
+        template(x-for="item in items")
+            a.header-item(:href="item.link" x-text="item.text" :class="isOnLink(item.link) ? 'header-item-on' : ''")

@@ -83,7 +83,19 @@ function serve() {
 
     app.get('/', (req, res) => {
         res.sendFile(__dirname + '/templates/index.html');
-    })
+    });
+
+    app.get('/dashboard', (req, res) => {
+        res.sendFile(__dirname + '/templates/dashboard.html');
+    });
+    
+    app.get('/feedback', (req, res) => {
+        res.sendFile(__dirname + '/templates/feedback.html');
+    });
+
+    app.use('*', (req, res) => {
+        res.status(400).sendFile(__dirname + '/templates/404.html');
+    });
 
     app.listen(process.env.PORT, () => Logger.getInfoLogger().log(`Server is listening on port ${process.env.PORT}`))
 }
@@ -91,6 +103,9 @@ function serve() {
 function compilePugFiles() {
     const pugs = {
         'index.pug': 'index.html',
+        'dashboard.pug': 'dashboard.html',
+        'feedback.pug': 'feedback.html',
+        '404.pug': '404.html',
     };
     for (const pugFile of Object.keys(pugs)) {
         const compiledFunction = pug.compileFile(`pug/${pugFile}`);
@@ -131,23 +146,8 @@ function compileStyles() {
             Logger.getInfoLogger().log(`Reading files from "styles" directory.`);
             files.forEach(filename => {
                 const name = filename.slice(0, -5);
-                sass.render({
-                    file: `styles/${filename}`,
-                }, (err, res) => {
-                    if (err) {
-                        Logger.getErrorLogger().log(`Failed to compile style ${filename}`);
-                        Logger.getDebugLogger().log(err);
-                    } else {
-                        writeFile(`styles-compiled/${name}.css`, res.css, (err) => {
-                            if (err) {
-                                Logger.getErrorLogger().log(`Failed to create ${name}.css`);
-                                Logger.getDebugLogger().log(err);
-                            } else {
-                                Logger.getInfoLogger().log(`Successfully compiled ${filename}`);
-                            }
-                        })
-                    }
-                });
+                const res = sass.renderSync({ file: `styles/${filename}` });
+                writeFileSync(`styles-compiled/${name}.css`, res.css);
             });
             Logger.getInfoLogger().log(`Successfully compiled all style files.`);
         }

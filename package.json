@@ -4,11 +4,12 @@
   "description": "telegram bot quack-nkn",
   "main": "index.ts",
   "scripts": {
-    "start": "nodemon index.ts both",
+    "start": "nodemon index.ts both --ignore static/ --ignore styles-compiled/ --ignore templates/ -e ts,js,pug,scss",
+    "run": "ts-node index.ts both",
     "bot": "ts-node index.ts bot",
     "serve": "ts-node index.ts serve",
     "bot-dev": "nodemon index.ts bot",
-    "serve-dev": "nodemon index.ts serve",
+    "serve-dev": "nodemon index.ts serve --ignore static/ --ignore styles-compiled/ --ignore templates/ -e ts,js,pug,scss",
     "migrate": "ts-node index.ts migrate",
     "clear": "ts-node index.ts clear"
   },

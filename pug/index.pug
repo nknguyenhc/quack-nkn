@@ -1,8 +1,9 @@
+include head.pug
+include header.pug
+
 <!DOCTYPE html> 
 head 
     title Quack-NKN 
-    script(src="/static/index.js")
-    link(href="/static/index.css")
+    +head
 body 
-    p Hello there!
-    code Test code
+    +header
