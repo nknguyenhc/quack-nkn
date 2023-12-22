@@ -155,6 +155,22 @@ export const screenshot = async ({
     });
 }
 
+export const getDomElements = async ({
+    page,
+    selector,
+}: {
+    page: Page,
+    selector: string,
+}): Promise<Array<ElementHandle<NodeFor<string>>>> => {
+    try {
+        return await page.$$(selector);
+    } catch (e) {
+        Logger.getWarningLogger().log(`Encountered an error while finding elements for selector "${selector}"`);
+        Logger.getDebugLogger().log(e);
+        return [];
+    }
+}
+
 export const visitLinkAndScrollToSelector = async ({
     link,
     bot,
@@ -205,7 +221,10 @@ export const visitLinkAndScrollToSelector = async ({
         return;
     }
 
-    const elements = await page.$$(selector);
+    const elements = await getDomElements({
+        page: page,
+        selector: selector,
+    });
     if (elements.length === 1) {
         await page.evaluate((element: ElementHandle<NodeFor<string>>) => {
             element.scrollIntoView();
@@ -284,7 +303,10 @@ export const visitLinkAndScrollToSelectorIndex = async ({
         return;
     }
 
-    const elements = await page.$$(selector);
+    const elements = await getDomElements({
+        page: page,
+        selector: selector,
+    });
 
     if (elements.length < index) {
         UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
@@ -501,7 +523,10 @@ export const buildVisitJob = async ({
         if (!isNaN(tryNumber)) {
             await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
         } else {
-            const elements = await page.$$(selector);
+            const elements = await getDomElements({
+                page: page,
+                selector: selector,
+            });
             if (elements.length >= 1) {
                 const element = index && index < elements.length ? elements[index] : elements[0];
                 await page.evaluate((element: ElementHandle<NodeFor<string>>) => {

@@ -2,7 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import { StartBotJob } from '../utils/types';
 import { Tracker } from './db';
 import { setReminder } from '../utils/schedule';
-import { checkPageValidity, launchBrowserAndPage, screenshot } from './functions';
+import { checkPageValidity, getDomElements, launchBrowserAndPage, screenshot } from './functions';
 import { User } from '../users/db';
 
 const trackStartJob: StartBotJob = async (bot: TelegramBot) => {
@@ -27,7 +27,10 @@ const trackStartJob: StartBotJob = async (bot: TelegramBot) => {
             if (!isNaN(tryNumber)) {
                 await page.evaluate(`window.scrollBy(0, ${tryNumber})`);
             } else {
-                const elements = await page.$$(selector);
+                const elements = await getDomElements({
+                    page: page,
+                    selector: selector,
+                });
                 if (elements.length >= 1) {
                     const element = selectorIndex && selectorIndex < elements.length ? elements[selectorIndex] : elements[0];
                     await page.evaluate((element) => {
