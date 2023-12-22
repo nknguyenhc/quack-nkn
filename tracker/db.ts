@@ -25,7 +25,7 @@ export const Tracker = sequelize.define<Model<TrackerType>>('Tracker', {
         primaryKey: true,
     },
     address: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false,
     },
     selector: {
@@ -37,7 +37,7 @@ export const Tracker = sequelize.define<Model<TrackerType>>('Tracker', {
         allowNull: true,
     },
     caption: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false,
     },
     frequency: {

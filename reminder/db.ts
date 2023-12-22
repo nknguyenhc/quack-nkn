@@ -21,7 +21,7 @@ export const Reminder = sequelize.define<Model<ReminderType>>('Reminder', {
         primaryKey: true,
     },
     content: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false,
     },
     frequency: {
