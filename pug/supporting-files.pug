@@ -1,0 +1,22 @@
+include button.pug
+include close-button.pug
+
+mixin supporting-files 
+    .files(x-data="files")
+        .files-label Supporting documents 
+        .files-input
+            +button("Browse files", "$el.parentElement.querySelector('input').click()")
+            input(type="file" multiple accept="image/*" @change="handleFile($el)")
+            table(x-show="files.length > 0")
+                thead 
+                    tr 
+                        td.files-table-1 Number 
+                        td.files-table-2 File name 
+                        td.files-table-3 Action
+                tbody 
+                    template(x-for="(file, index) in files")
+                        tr 
+                            td(x-text="index + 1")
+                            td(x-text="file.name")
+                            td
+                                +close-button("removeFile(index)")

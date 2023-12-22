@@ -1,0 +1,14 @@
+include input.pug
+include textarea.pug
+include supporting-files.pug
+
+mixin feedback-form
+    .feedback(x-data="feedback" @fileschanged.window="files = $event.detail")
+        .feedback-header Have any feedback for us?
+        .feedback-caption You may fill in the following form, or post an issue in my <a href="https://github.com/nknguyenhc/quack-nkn/issues">Github issue tracker</a>.
+        +input("Your name", "name")
+        +input("How do I contact you? (email, linkedin, Telegram, etc)", "contact")
+        +textarea("Your message to us", "Type your message here ...", "message")
+        +supporting-files
+        .feedback-submit 
+            +button("Submit", "submit()")
