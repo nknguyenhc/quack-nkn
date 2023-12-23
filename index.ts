@@ -218,8 +218,13 @@ async function createAdmin() {
     type State = 'username' | 'password' | 'confirm-password';
     var state: State = 'username';
 
+    async function handleCreateUser() {
+        await createUser(username, password);
+        Logger.getInfoLogger().log("Successfully created user!");
+    }
+
     process.stdout.write("Username: ");
-    process.stdin.on('data', (ch) => {
+    process.stdin.on('data', async (ch) => {
         const c = ch.toString('utf8');
         if (c.length === 3) {
             return;
@@ -231,7 +236,14 @@ async function createAdmin() {
             case "\u0004":
                 switch (state) {
                     case 'username':
-                        process.stdout.write("\nPassword: ");
+                        process.stdout.write("\n");
+                        if (await isUsernameTaken(username)) {
+                            Logger.getWarningLogger().log("Username is taken!");
+                            process.stdout.write("Username: ");
+                            username = '';
+                            break;
+                        }
+                        process.stdout.write("Password: ");
                         state = 'password';
                         break;
                     case 'password':
@@ -240,7 +252,16 @@ async function createAdmin() {
                         break;
                     case 'confirm-password':
                         process.stdout.write("\n");
+                        if (password !== confirmPassword) {
+                            Logger.getWarningLogger().log("Password and confirm password are different!");
+                            password = '';
+                            confirmPassword = '';
+                            process.stdout.write("Password: ");
+                            state = 'password';
+                            break;
+                        }
                         process.stdin.pause();
+                        await handleCreateUser();
                         break;
                 }
                 break;
