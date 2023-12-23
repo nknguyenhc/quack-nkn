@@ -18,6 +18,7 @@ type AdminType = {
 type AuthenticatedAdminType = {
     username: string,
     session: string,
+    expiry: Date,
 };
 
 export const Admin = sequelize.define<Model<AdminType>>('Admin', {
@@ -43,9 +44,14 @@ export const isUsernameTaken = async (username: string): Promise<boolean> => {
     return Admin.findByPk(username).then(admin => admin !== null);
 };
 
-const getExpiry = () => new Date().getTime() / 1000 + 3 * 2600 * 24;
+const getExpiry = (): number => Math.round(new Date().getTime() / 1000 + 3 * 3600 * 24);
 
-const createSession = async (username: string): Promise<string> => {
+const expiryNumberToDate = (number: number): Date => new Date(number * 1000);
+
+const createSession = async (username: string): Promise<{
+    session: string,
+    expiry: Date,
+}> => {
     const session = getRandomString();
     const expiry = getExpiry();
     await Admin.update({
@@ -54,7 +60,10 @@ const createSession = async (username: string): Promise<string> => {
     }, {
         where: { username: username },
     });
-    return session;
+    return {
+        session: session,
+        expiry: expiryNumberToDate(expiry),
+    };
 };
 
 export const createUser = async (username: string, password: string) => {
@@ -74,11 +83,12 @@ export const authenticate = async (username: string, password: string): Promise<
         if (admin === null) {
             return null;
         }
-        const session = await createSession(username);
+        const { session, expiry } = await createSession(username);
         return {
             username: username,
             session: session,
-        }
+            expiry: expiry,
+        };
     });
 };
 
@@ -94,14 +104,16 @@ export const getUser = async (session: string): Promise<AuthenticatedAdminType |
             return null;
         }
 
+        const newExpiry = getExpiry();
         await Admin.update({
-            expiry: getExpiry(),
+            expiry: newExpiry,
         }, {
             where: { session: session },
         });
         return {
             username: admin.dataValues.username,
             session: session,
+            expiry: expiryNumberToDate(newExpiry),
         };
     });
 };

@@ -14,6 +14,10 @@ import express from "express";
 import pug from "pug";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdir, readdirSync, writeFile, writeFileSync } from "fs";
 import sass from "node-sass";
+import cookieParser from "cookie-parser";
+import bodyParser from "body-parser";
+import adminRouter from "./admins/router";
+import { detectUser } from "./admins/middleware";
 
 dotenv.config();
 
@@ -81,7 +85,11 @@ function serve() {
     compileStyles();
     combineFiles('styles-compiled', 'static/index.css');
 
+    app.use(cookieParser());
+    app.use(bodyParser.json());
+    app.use(detectUser);
     app.use('/static', express.static('static'));
+    app.use('/user', adminRouter);
 
     app.get('/', (req, res) => {
         res.sendFile(__dirname + '/templates/index.html');
