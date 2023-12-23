@@ -7,11 +7,12 @@ import dotenv from 'dotenv';
 import { User } from './users/db';
 import { Reminder } from './reminder/db';
 import { Tracker } from './tracker/db';
+import { Admin, createUser, isUsernameTaken } from './admins/db';
 import trackStartJob from './tracker/start';
 import Logger from './logging/logger';
 import express from "express";
 import pug from "pug";
-import { appendFileSync, readFileSync, readdir, readdirSync, writeFile, writeFileSync } from "fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdir, readdirSync, writeFile, writeFileSync } from "fs";
 import sass from "node-sass";
 
 dotenv.config();
@@ -175,12 +176,114 @@ async function migrate() {
     await User.sync({ alter: true });
     await Reminder.sync({ alter: true });
     await Tracker.sync({ alter: true });
+    await Admin.sync({ alter: true });
 }
 
 async function clear() {
     await User.sync({ force: true });
     await Reminder.sync({ force: true });
     await Tracker.sync({ force: true });
+    await Admin.sync({ force: true });
+}
+
+function setup() {
+    const folders: Array<string> = [
+        "media",
+        "static",
+        "static/assets",
+        "styles-compiled",
+        "templates",
+    ];
+    for (const folder of folders) {
+        if (!existsSync(folder)) {
+            mkdirSync(folder);
+        }
+    }
+}
+
+async function createAdmin() {
+    process.stdin.setEncoding('utf8');
+    process.stdin.setRawMode(true);
+    const BACKSPACE = String.fromCharCode(8);
+
+    function handleBackspace(prompt: string) {
+        process.stdout.clearLine(0);
+        process.stdout.cursorTo(0);
+        process.stdout.write(prompt);
+    }
+
+    var username = '';
+    var password = '';
+    var confirmPassword = '';
+    type State = 'username' | 'password' | 'confirm-password';
+    var state: State = 'username';
+
+    process.stdout.write("Username: ");
+    process.stdin.on('data', (ch) => {
+        const c = ch.toString('utf8');
+        if (c.length === 3) {
+            return;
+        }
+
+        switch (c) {
+            case "\n":
+            case "\r":
+            case "\u0004":
+                switch (state) {
+                    case 'username':
+                        process.stdout.write("\nPassword: ");
+                        state = 'password';
+                        break;
+                    case 'password':
+                        process.stdout.write("\nConfirm password: ");
+                        state = 'confirm-password';
+                        break;
+                    case 'confirm-password':
+                        process.stdout.write("\n");
+                        process.stdin.pause();
+                        break;
+                }
+                break;
+            case "\u0003":
+                process.stdin.pause();
+                break;
+            case BACKSPACE:
+                switch (state) {
+                    case 'username':
+                        username = username.slice(0, username.length - 1);
+                        handleBackspace("Username: ");
+                        process.stdout.write(username);
+                        break;
+                    case 'password':
+                        password = password.slice(0, password.length - 1);
+                        handleBackspace("Password: ");
+                        process.stdout.write('*'.repeat(password.length));
+                        break;
+                    case 'confirm-password':
+                        confirmPassword = confirmPassword.slice(0, confirmPassword.length - 1);
+                        handleBackspace("Confirm password: ");
+                        process.stdout.write('*'.repeat(confirmPassword.length));
+                        break;
+                }
+                break;
+            default:
+                switch (state) {
+                    case 'username':
+                        username += c;
+                        process.stdout.write(c);
+                        break;
+                    case 'password':
+                        password += c;
+                        process.stdout.write('*');
+                        break;
+                    case 'confirm-password':
+                        confirmPassword += c;
+                        process.stdout.write('*');
+                        break;
+                }
+                break;
+        }
+    });
 }
 
 switch (process.argv[2]) {
@@ -199,5 +302,11 @@ switch (process.argv[2]) {
     case 'both':
         main();
         serve();
+        break;
+    case 'setup':
+        setup();
+        break;
+    case 'createadmin':
+        createAdmin();
         break;
 }
