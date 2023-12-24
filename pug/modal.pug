@@ -1,0 +1,10 @@
+include close-button.pug
+
+mixin modal 
+    .modal(x-data="modal" x-cloak x-show="isOpen")
+        .modal-window
+            .modal-header 
+                .modal-close
+                    +close-button("closeModal()")
+            hr
+            .modal-body(x-text="$store.modal.message")

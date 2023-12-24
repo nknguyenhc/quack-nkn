@@ -87,6 +87,7 @@ function serve() {
 
     app.use(cookieParser());
     app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: true }));
     app.use(detectUser);
     app.use('/static', express.static('static'));
     app.use('/user', adminRouter);
@@ -101,6 +102,10 @@ function serve() {
     
     app.get('/feedback', (req, res) => {
         res.sendFile(__dirname + '/templates/feedback.html');
+    });
+
+    app.get('/login', (req, res) => {
+        res.sendFile(__dirname + '/templates/login-page.html');
     });
 
     app.get('/favicon.ico', (req, res) => {
@@ -139,6 +144,7 @@ function compilePugFiles() {
         'index.pug': 'index.html',
         'dashboard.pug': 'dashboard.html',
         'feedback.pug': 'feedback.html',
+        'login-page.pug': 'login-page.html',
         '404.pug': '404.html',
     };
     for (const pugFile of Object.keys(pugs)) {

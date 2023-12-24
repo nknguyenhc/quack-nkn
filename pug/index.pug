@@ -1,6 +1,7 @@
 include head.pug
 include header.pug
 include landing-banner.pug
+include modal.pug
 
 <!DOCTYPE html> 
 head 
@@ -9,3 +10,5 @@ head
 body 
     +header
     +landing-banner
+    +modal
+    a.login-button(href="/login") Login
