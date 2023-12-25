@@ -34,6 +34,14 @@ export const postFeedbackForm = async (req: CustomRequest, res: Response) => {
                     feedbackId: feedbackId,
                 });
             });
+        } else {
+            const id = getRandomString();
+            await File.create({
+                id: id,
+                name: files.name,
+                path: files.path,
+                feedbackId: feedbackId,
+            });
         }
     }
     res.send({

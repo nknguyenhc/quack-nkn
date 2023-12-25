@@ -1,2 +1,21 @@
 mixin feedback-list
     .feedback-list(x-data="feedbacklist")
+        template(x-for="feedback in feedbacks")
+            .feedback-list-item
+                .feedback-list-item-section 
+                    .feedback-list-item-section-header Title
+                    .feedback-list-item-section-content(x-text="feedback.title")
+                .feedback-list-item-section 
+                    .feedback-list-item-section-header Contact 
+                    .feedback-list-item-section-content(x-text="feedback.contact")
+                .feedback-list-item-section 
+                    .feedback-list-item-section-header Message
+                    .feedback-list-item-section-content(x-text="feedback.message")
+                .feedback-list-item-section 
+                    .feedback-list-item-section-header Supporting files 
+                    .feedback-list-item-section-content 
+                        template(x-for="file in feedback.files")
+                            .feedback-list-item-file
+                                template(x-if="file.isImage")
+                                    img.feedback-list-item-file-image(:src="'/api/feedback/file?id=' + file.id")
+                                a.feedback-list-item-file-name(:href="'/api/feedback/file?id=' + file.id" x-text="file.name")
