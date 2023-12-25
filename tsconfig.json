@@ -13,9 +13,6 @@
        "experimentalDecorators": true,
        "sourceMap": true
     },
-    "files": [
-      "custom.d.ts"
-    ],
     "include": ["*.ts"],
     "exclude": ["node_modules", "**/*.spec.ts"]
  }
