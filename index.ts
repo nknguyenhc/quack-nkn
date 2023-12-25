@@ -18,6 +18,9 @@ import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import adminRouter from "./admins/router";
 import { detectUser } from "./admins/middleware";
+import feedbackRouter from "./feedback/router";
+import formDataParser from "express-form-data";
+import { File, Feedback } from "./feedback/db";
 
 dotenv.config();
 
@@ -87,10 +90,13 @@ function serve() {
 
     app.use(cookieParser());
     app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(formDataParser.parse({
+        uploadDir: __dirname + "/uploads",
+    }));
     app.use(detectUser);
     app.use('/static', express.static('static'));
     app.use('/user', adminRouter);
+    app.use('/api/feedback', feedbackRouter);
 
     app.get('/', (req, res) => {
         res.sendFile(__dirname + '/templates/index.html');
@@ -191,6 +197,8 @@ async function migrate() {
     await Reminder.sync({ alter: true });
     await Tracker.sync({ alter: true });
     await Admin.sync({ alter: true });
+    await File.sync({ alter: true });
+    await Feedback.sync({ alter: true });
 }
 
 async function clear() {
@@ -198,6 +206,8 @@ async function clear() {
     await Reminder.sync({ force: true });
     await Tracker.sync({ force: true });
     await Admin.sync({ force: true });
+    await File.sync({ force: true});
+    await Feedback.sync({ force: true });
 }
 
 function setup() {
@@ -207,6 +217,7 @@ function setup() {
         "static/assets",
         "styles-compiled",
         "templates",
+        "uploads",
     ];
     for (const folder of folders) {
         if (!existsSync(folder)) {

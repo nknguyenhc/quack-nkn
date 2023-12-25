@@ -45,6 +45,7 @@ media/
 templates/
 static/
 styles-compiled/
+uploads/
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/

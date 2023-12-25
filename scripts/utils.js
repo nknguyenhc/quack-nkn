@@ -10,7 +10,7 @@ async function submitJson(url, object) {
 
 async function submitForm(url, object) {
     const formData = new FormData();
-    for (const key of object) {
+    for (const key of Object.keys(object)) {
         if (typeof object[key] === 'object') { // array
             for (const item of object[key]) {
                 formData.append(key, item);
@@ -21,9 +21,6 @@ async function submitForm(url, object) {
     }
     return fetch(url, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/form-data",
-        },
         body: formData,
     }).then(res => res.json());
 }
