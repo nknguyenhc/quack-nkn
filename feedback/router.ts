@@ -1,7 +1,10 @@
 import { Router } from "express";
-import { postFeedbackForm } from "./view";
+import { feedbackFile, feedbacksTemplate, getFeedbacks, postFeedbackForm } from "./view";
 
 const feedbackRouter = Router();
 feedbackRouter.post('/submit', postFeedbackForm);
+feedbackRouter.get('/all', feedbacksTemplate);
+feedbackRouter.get('/get', getFeedbacks);
+feedbackRouter.get('/file', feedbackFile);
 
 export default feedbackRouter;

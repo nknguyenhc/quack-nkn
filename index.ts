@@ -151,6 +151,7 @@ function compilePugFiles() {
         'dashboard.pug': 'dashboard.html',
         'feedback.pug': 'feedback.html',
         'login-page.pug': 'login-page.html',
+        'feedbacks.pug': 'feedbacks.html',
         '404.pug': '404.html',
     };
     for (const pugFile of Object.keys(pugs)) {

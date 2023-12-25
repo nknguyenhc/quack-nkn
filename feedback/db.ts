@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 import { getConnection } from '../utils/db';
 import { DataTypes, Model } from 'sequelize';
-import Logger from "../logging/logger";
 
 dotenv.config();
 
