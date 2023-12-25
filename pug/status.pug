@@ -1,0 +1,10 @@
+mixin status 
+    .status(x-data="status")
+        template(x-if="isLoaded && !isLoggedIn")
+            .status-container
+                a(href="/login") Login
+        template(x-if="isLoaded && isLoggedIn")
+            .status-container
+                .status-username(x-text="`Hi, ${username}!`")
+                a(href="/api/feedback/all") Feedbacks
+                .status-logout(@click="logout()") Logout
