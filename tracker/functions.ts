@@ -125,6 +125,8 @@ export const checkPageValidity = async ({
         await page.goto(link);
         return true;
     } catch (e) {
+        Logger.getErrorLogger().log(`Unable to visit link ${link}`);
+        Logger.getDebugLogger().log(e);
         invalidHandler();
         return false;
     }
