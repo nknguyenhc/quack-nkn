@@ -17,7 +17,7 @@ export interface CustomRequest extends Request {
     user?: {
         username: string,
     },
-    files?: {
-        files: File | Array<File>,
+    files: {
+        files?: File | Array<File>,
     },
 }

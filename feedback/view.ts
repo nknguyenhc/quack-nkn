@@ -4,6 +4,10 @@ import { Feedback, File } from "./db";
 import { getRandomString } from "../utils/primitives";
 import path from "path";
 import mime from "mime-types";
+import nodemailer from "nodemailer";
+import { compileFile } from "pug";
+
+const emailTemplate = compileFile('feedback/email.pug');
 
 export const postFeedbackForm = async (req: CustomRequest, res: Response) => {
     const { title, contact, message } = req.body;
@@ -22,8 +26,8 @@ export const postFeedbackForm = async (req: CustomRequest, res: Response) => {
         body: message,
     });
     
-    if (req.files) {
-        const files = req.files.files;
+    const files = req.files.files;
+    if (files) {
         if (Array.isArray(files)) {
             files.forEach(async file => {
                 const id = getRandomString();
@@ -44,6 +48,26 @@ export const postFeedbackForm = async (req: CustomRequest, res: Response) => {
             });
         }
     }
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+            user: process.env.GMAIL_USERNAME,
+            pass: process.env.GMAIL_PASSWORD,
+        },
+    });
+    transporter.sendMail({
+        from: process.env.GMAIL_USERNAME,
+        to: process.env.GMAIL_USERNAME,
+        subject: 'You have a new feedback for Quack-NKN!',
+        html: emailTemplate({
+            title: title,
+            contact: contact,
+            message: message,
+        }),
+    });
     res.send({
         message: "Success",
     });
