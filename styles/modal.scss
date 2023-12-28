@@ -1,0 +1,30 @@
+.modal {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(216, 216, 216, 0.6);
+    z-index: 1000;
+
+    &-window {
+        padding: 14px;
+        border-radius: 10px;
+        background-color: white;
+        min-width: 300px;
+        max-width: 600px;
+    }
+
+    &-header {
+        display: flex;
+        flex-direction: row;
+        justify-content: end;
+    }
+
+    &-close {
+        width: fit-content;
+    }
+}

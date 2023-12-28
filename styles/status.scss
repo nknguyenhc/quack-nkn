@@ -1,0 +1,17 @@
+.status {
+    position: fixed;
+    top: 100px;
+    left: 40px;
+    z-index: 90;
+
+    &-container {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    &-logout {
+        text-decoration: underline;
+        cursor: pointer;
+    }
+}

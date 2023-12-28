@@ -1,0 +1,11 @@
+include input.pug
+include password-input.pug
+include button.pug
+
+mixin login 
+    .login(x-data="login")
+        .login-title Login
+        +input("Username", "username")
+        +password-input("password")
+        .login-submit 
+            +button("Login", "submit()")

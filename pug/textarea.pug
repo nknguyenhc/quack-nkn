@@ -1,0 +1,4 @@
+mixin textarea(label, placeholder, model)
+    .input 
+        .input-label #{label} 
+        textarea.input-input(rows="10" placeholder=placeholder x-model=model)

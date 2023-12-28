@@ -1,0 +1,13 @@
+.input {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &-input {
+        width: 500px;
+        border-radius: 8px;
+        border: rgb(71, 71, 71) 2px solid;
+        padding: 6px;
+        resize: vertical;
+    }
+}

@@ -1,0 +1,8 @@
+mixin landing-banner
+    .landing(x-data="landing")
+        .landing-img-container(@click="handleFrame($event)")
+            template(x-for="(frame, index) in frames")
+                .landing-img(:class="index === showIndex ? '' : 'landing-img-hide'")
+                    img(:src="frame")
+        .landing-link Bot is here: 
+            a(href="https://t.me/website_tracker_bot") https://t.me/website_tracker_bot

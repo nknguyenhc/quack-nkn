@@ -50,4 +50,8 @@ export default class Logger {
     public pollAnswerLog(chatId: number, pollAnswer: string) {
         this.log(`User ${chatId} answered poll with \"${pollAnswer}\" at state ${UserStates.STATE[UserStates.getUserState(chatId)]}`);
     }
+
+    public fileNotFoundLog(filename: string) {
+        this.log(`Cannot find file ${filename}`);
+    }
 }

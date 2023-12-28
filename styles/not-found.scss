@@ -1,0 +1,15 @@
+.not-found {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding: 30px;
+    align-items: center;
+
+    &-img {
+        max-height: 450px;
+    }
+
+    &-text {
+        font-size: 30px;
+    }
+}

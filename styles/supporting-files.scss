@@ -1,0 +1,40 @@
+.files {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &-input {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        input {
+            display: none;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 500px;
+
+            .files-table {
+                &-1 {
+                    width: 10%;
+                }
+
+                &-2 {
+                    width: 80%;
+                }
+
+                &-3 {
+                    width: 10%;
+                }
+            }
+
+            td {
+                border: 1px black solid;
+                padding: 4px;
+                text-align: center;
+            }
+        }
+    }
+}

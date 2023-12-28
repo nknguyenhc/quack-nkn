@@ -1,0 +1,21 @@
+.feedback {
+    margin: 20px auto 200px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: fit-content;
+
+    &-header {
+        font-size: 30px;
+        font-weight: 600;
+    }
+
+    &-caption {
+        max-width: 750px;
+    }
+
+    &-submit {
+        width: fit-content;
+        align-self: flex-end;
+    }
+}
