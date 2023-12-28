@@ -1,6 +1,6 @@
 {
   "name": "quack-nkn",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "telegram bot quack-nkn",
   "main": "index.ts",
   "scripts": {
