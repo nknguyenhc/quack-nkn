@@ -43,6 +43,7 @@ const startHandler: TextHandler = {
             + 'If you wish to give feedback on my services, '
             + 'you can post an issue on my Github issue tracker here: https://github.com/nknguyenhc/quack-nkn/issues , '
             + 'or submit feedback to me at https://nknguyenhc.alwaysdata.net/\n'
+            + 'Warning: using me to visit harmful websites will not be tolerated.\n'
             + 'Here is the list of available commands:\n'
             + '/start - show this message\n'
             + '/reminder - add, view, edit or delete your reminders\n'
