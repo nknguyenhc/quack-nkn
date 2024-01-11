@@ -220,3 +220,19 @@ export class TimezoneTemp {
         delete TimezoneTemp.#timezones[chatId];
     }
 }
+
+export class UserManager {
+    static #blocked: Set<number> = new Set();
+
+    static async loadUsers() {
+        await User.findAll().then(persons => {
+            UserManager.#blocked = new Set(persons
+                .filter(person => person.dataValues.isBlocked)
+                .map(person => Number(person.dataValues.chatId)));
+        });
+    }
+
+    static isUserBlocked(chatId: number): boolean {
+        return UserManager.#blocked.has(chatId);
+    }
+}

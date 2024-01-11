@@ -22,6 +22,8 @@ import feedbackRouter from "./feedback/router";
 import formDataParser from "express-form-data";
 import { File, Feedback } from "./feedback/db";
 import { loggingMiddleware } from "./logging/middleware";
+import userStartJob from "./users/start";
+import { UserManager } from './users/temp';
 
 dotenv.config();
 
@@ -30,13 +32,24 @@ function main() {
 
     reminderStartJob(bot);
     trackStartJob(bot);
+    userStartJob(bot);
 
     [...textUserHandlers, ...textReminderHandlers, ...trackTextHandlers].forEach((handler) => {
-        bot.onText(handler.command, handler.handler(bot));
+        bot.onText(handler.command, (msg: Message) => {
+            const chatId = msg.chat.id;
+            if (UserManager.isUserBlocked(chatId)) {
+                return;
+            }
+            handler.handler(bot)(msg);
+        });
     });
 
     [...plainUserHandlers, ...plainReminderHandlers, ...trackPlainHandler].forEach((handler) => {
         bot.on('message', (msg: Message) => {
+            const chatId = msg.chat.id;
+            if (UserManager.isUserBlocked(chatId)) {
+                return;
+            }
             if (msg.text.startsWith('/')) {
                 return;
             }
@@ -47,6 +60,13 @@ function main() {
     [...pollUserHandlers, ...pollAnswerReminderHandlers, ...trackPollHandler].forEach((handler) => {
         bot.on("callback_query", handler.handler(bot));
     });
+
+    bot.on("message", (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserManager.isUserBlocked(chatId)) {
+            bot.sendMessage(chatId, "You are blocked, please contact administrator for more details.");
+        }
+    })
 
     Logger.getInfoLogger().log("Bot is ready to receive requests.");
 }
