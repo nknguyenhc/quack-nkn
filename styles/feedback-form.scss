@@ -5,13 +5,17 @@
     gap: 20px;
     width: fit-content;
 
+    @media (max-width: 968px) {
+        align-items: center;
+    }
+
     &-header {
         font-size: 30px;
         font-weight: 600;
     }
 
     &-caption {
-        max-width: 750px;
+        max-width: calc(min(750px, 90vw));
     }
 
     &-submit {

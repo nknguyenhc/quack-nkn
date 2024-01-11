@@ -4,10 +4,16 @@
     gap: 6px;
 
     &-input {
-        width: 500px;
+        width: calc(min(500px, 90vw));
         border-radius: 8px;
         border: rgb(71, 71, 71) 2px solid;
         padding: 6px;
         resize: vertical;
+    }
+
+    &-label {
+        @media (max-width: 968px) {
+            max-width: calc(min(90vw, 500px));
+        }
     }
 }
