@@ -21,16 +21,18 @@ const startHandler: TextHandler = {
         if (users.length > 0) {
             Logger.getInfoLogger().log(`User ${chatId} is an old user.`);
             const user = users[0];
-            if (msg.chat.username && user.dataValues.username !== msg.chat.username) {
-                user.update({
-                    username: msg.chat.username,
-                });
-            }
+            user.update({
+                username: msg.chat.username,
+                firstname: msg.chat.first_name,
+                lastname: msg.chat.last_name,
+            });
         } else {
             Logger.getInfoLogger().log(`User ${chatId} is a new user.`);
             User.create({
                 chatId: String(chatId),
                 username: msg.chat.username,
+                firstname: msg.chat.first_name,
+                lastname: msg.chat.last_name,
             });
         }
         bot.sendMessage(chatId, 

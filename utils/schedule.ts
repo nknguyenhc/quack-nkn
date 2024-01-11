@@ -1,3 +1,5 @@
+import Logger from "../logging/logger";
+
 export type FrequencyType = 'daily' | 'weekly' | 'once';
 
 export const setReminder = ({ number, frequency, job, isValid, timezone }: {
@@ -11,7 +13,12 @@ export const setReminder = ({ number, frequency, job, isValid, timezone }: {
         case 'daily':
             scheduleJob(getNearestTime(number, timezone), async () => {
                 if (await isValid()) {
-                    job();
+                    try {
+                        job();
+                    } catch (e) {
+                        Logger.getWarningLogger().log(`Failed to execute scheduled job, { number: ${number}, frequency: ${frequency}, timezone: ${timezone} }`);
+                        Logger.getDebugLogger().log(e);
+                    }
                     setReminder({ number, frequency, job, isValid, timezone });
                 }
             });
@@ -19,7 +26,12 @@ export const setReminder = ({ number, frequency, job, isValid, timezone }: {
         case 'weekly':
             scheduleJob(getNearestDateTime(Math.floor(number / 4), number % 4, timezone), async () => {
                 if (await isValid()) {
-                    job();
+                    try {
+                        job();
+                    } catch (e) {
+                        Logger.getWarningLogger().log(`Failed to execute scheduled job, { number: ${number}, frequency: ${frequency}, timezone: ${timezone} }`);
+                        Logger.getDebugLogger().log(e);
+                    }
                     setReminder({ number, frequency, job, isValid, timezone });
                 }
             });
@@ -27,7 +39,12 @@ export const setReminder = ({ number, frequency, job, isValid, timezone }: {
         case 'once':
             scheduleJob(new Date(number * 1000), async () => {
                 if (await isValid()) {
-                    job();
+                    try {
+                        job();
+                    } catch (e) {
+                        Logger.getWarningLogger().log(`Failed to execute scheduled job, { number: ${number}, frequency: ${frequency}, timezone: ${timezone} }`);
+                        Logger.getDebugLogger().log(e);
+                    }
                 }
             });
             break;
