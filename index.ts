@@ -31,23 +31,11 @@ function main() {
     reminderStartJob(bot);
     trackStartJob(bot);
 
-    textUserHandlers.forEach((handler) => {
+    [...textUserHandlers, ...textReminderHandlers, ...trackTextHandlers].forEach((handler) => {
         bot.onText(handler.command, handler.handler(bot));
     });
 
-    plainUserHandlers.forEach((handler) => {
-        bot.on("message", handler.handler(bot));
-    });
-
-    pollUserHandlers.forEach((handler) => {
-        bot.on("callback_query", handler.handler(bot));
-    });
-
-    textReminderHandlers.forEach((handler) => {
-        bot.onText(handler.command, handler.handler(bot));
-    });
-
-    plainReminderHandlers.forEach((handler) => {
+    [...plainUserHandlers, ...plainReminderHandlers, ...trackPlainHandler].forEach((handler) => {
         bot.on('message', (msg: Message) => {
             if (msg.text.startsWith('/')) {
                 return;
@@ -56,25 +44,8 @@ function main() {
         });
     });
 
-    pollAnswerReminderHandlers.forEach((handler) => {
-        bot.on('callback_query', handler.handler(bot));
-    });
-
-    trackTextHandlers.forEach((handler) => {
-        bot.onText(handler.command, handler.handler(bot));
-    });
-
-    trackPlainHandler.forEach((handler) => {
-        bot.on("message", (msg: Message) => {
-            if (msg.text.startsWith('/')) {
-                return;
-            }
-            handler.handler(bot)(msg);
-        });
-    });
-
-    trackPollHandler.forEach((handler) => {
-        bot.on('callback_query', handler.handler(bot));
+    [...pollUserHandlers, ...pollAnswerReminderHandlers, ...trackPollHandler].forEach((handler) => {
+        bot.on("callback_query", handler.handler(bot));
     });
 
     Logger.getInfoLogger().log("Bot is ready to receive requests.");

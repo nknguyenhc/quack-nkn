@@ -14,6 +14,7 @@ type UserType = {
     timezone: number,
     firstname: string | undefined,
     lastname: string | undefined,
+    isBlocked: boolean,
 }
 
 export const User = sequelize.define<Model<UserType>>('User', {
@@ -36,6 +37,10 @@ export const User = sequelize.define<Model<UserType>>('User', {
     lastname: {
         type: DataTypes.STRING,
         allowNull: true,
+    },
+    isBlocked: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
     },
 });
 
