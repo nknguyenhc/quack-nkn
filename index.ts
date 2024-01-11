@@ -21,6 +21,7 @@ import { detectUser } from "./admins/middleware";
 import feedbackRouter from "./feedback/router";
 import formDataParser from "express-form-data";
 import { File, Feedback } from "./feedback/db";
+import { loggingMiddleware } from "./logging/middleware";
 
 dotenv.config();
 
@@ -88,6 +89,7 @@ function serve() {
     compileStyles();
     combineFiles('styles-compiled', 'static/index.css');
 
+    app.use(loggingMiddleware);
     app.use(cookieParser());
     app.use(bodyParser.json());
     app.use(formDataParser.parse({
