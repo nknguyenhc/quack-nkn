@@ -120,6 +120,10 @@ function serve() {
         res.sendFile(__dirname + '/templates/feedback.html');
     });
 
+    app.get('/terms-of-services', (req, res) => {
+        res.sendFile(__dirname + '/templates/terms-of-services.html');
+    });
+
     app.get('/login', (req, res) => {
         res.sendFile(__dirname + '/templates/login-page.html');
     });
@@ -160,6 +164,7 @@ function compilePugFiles() {
         'index.pug': 'index.html',
         'dashboard.pug': 'dashboard.html',
         'feedback.pug': 'feedback.html',
+        'terms-of-services.pug': 'terms-of-services.html',
         'login-page.pug': 'login-page.html',
         'feedbacks.pug': 'feedbacks.html',
         '404.pug': '404.html',
