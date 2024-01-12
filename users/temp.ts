@@ -5,7 +5,6 @@ import { setReminder } from '../utils/schedule';
 import { Tracker } from '../tracker/db';
 import { checkPageValidity, getDomElements, launchBrowserAndPage, screenshot } from '../tracker/functions';
 import { User } from './db';
-import { sendPhoto } from '../utils/bot';
 
 type TimezoneDict = {
     [key: number]: {
@@ -223,6 +222,7 @@ export class TimezoneTemp {
 
 export class UserManager {
     static #blocked: Set<number> = new Set();
+    static #admins: Set<number> = new Set();
 
     static async loadUsers() {
         await User.findAll().then(persons => {
@@ -230,9 +230,47 @@ export class UserManager {
                 .filter(person => person.dataValues.isBlocked)
                 .map(person => Number(person.dataValues.chatId)));
         });
+        UserManager.#admins = new Set([
+            Number(process.env.ADMIN),
+        ]);
+    }
+
+    static async isUserExist(chatId: number): Promise<boolean> {
+        return User.findOne({
+            where: { chatId: String(chatId) },
+        }).then(user => user !== null);
     }
 
     static isUserBlocked(chatId: number): boolean {
         return UserManager.#blocked.has(chatId);
+    }
+
+    static async blockUser(chatId: number) {
+        UserManager.#blocked.add(chatId);
+        await Promise.all([
+            User.update(
+                { isBlocked: true }, 
+                { where: { chatId: String(chatId) } },
+            ),
+            Reminder.destroy({
+                where: { userChatId: String(chatId) },
+            }),
+            Tracker.destroy({
+                where: { userChatId: String(chatId) },
+            }),
+        ]);
+    }
+
+    static async unblockUser(chatId: number) {
+        UserManager.#blocked.delete(chatId);
+        await User.update({
+            isBlocked: false,
+        }, {
+            where: { chatId: String(chatId) },
+        });
+    }
+
+    static isAdmin(chatId: number): boolean {
+        return UserManager.#admins.has(chatId);
     }
 }

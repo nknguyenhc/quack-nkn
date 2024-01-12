@@ -24,6 +24,7 @@ import { File, Feedback } from "./feedback/db";
 import { loggingMiddleware } from "./logging/middleware";
 import userStartJob from "./users/start";
 import { UserManager } from './users/temp';
+import UserStates, { knownAdminCommands, knownCommands } from './utils/states';
 
 dotenv.config();
 
@@ -64,9 +65,25 @@ function main() {
     bot.on("message", (msg: Message) => {
         const chatId = msg.chat.id;
         if (UserManager.isUserBlocked(chatId)) {
+            Logger.getWarningLogger().log(`Blocked user ${chatId} is trying to message ${msg.text}`);
             bot.sendMessage(chatId, "You are blocked, please contact administrator for more details.");
         }
-    })
+    });
+
+    bot.on("message", (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserManager.isUserBlocked(chatId)) {
+            return;
+        }
+        const stateInfo = knownCommands.get(UserStates.getUserState(chatId))!;
+        const isMessageRecognised = 
+            stateInfo.commands.some(regex => msg.text?.match(regex)) || (stateInfo.allowPlain && !msg.text?.startsWith("/"));
+        const isAdminRecognised = UserManager.isAdmin(chatId) && knownAdminCommands.some(regex => msg.text?.match(regex));
+        if (!isMessageRecognised && !isAdminRecognised) {
+            Logger.getInfoLogger().log(`User ${chatId} executed an unknown command: \"${msg.text}\"`);
+            bot.sendMessage(chatId, stateInfo.errorMessage);
+        }
+    });
 
     Logger.getInfoLogger().log("Bot is ready to receive requests.");
 }

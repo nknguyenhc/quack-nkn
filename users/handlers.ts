@@ -1,11 +1,11 @@
 import TelegramBot, { CallbackQuery, Message } from "node-telegram-bot-api";
 import { User, getTimezone } from './db';
 import { PlainHandler, PollAnswerHandler, TextHandler } from '../utils/types';
-import UserStates, { knownCommands } from "../utils/states";
+import UserStates from "../utils/states";
 import { ReminderDeleteMemory, ReminderEditMemory, ReminderMemory } from "../reminder/temp";
 import { TrackDeleteMemory, TrackEditMemory, TrackMemory } from "../tracker/temp";
 import { timezonePoll } from './data';
-import { TimezoneTemp } from './temp';
+import { TimezoneTemp, UserManager } from './temp';
 import Logger from "../logging/logger";
 
 const startHandler: TextHandler = {
@@ -205,18 +205,64 @@ const deleteHandler: TextHandler = {
                     + '\n/track - delete one of your website trackers');
         }
     }
-}
+};
 
-const errorHandler: PlainHandler = {
+const blockHandler: TextHandler = {
+    command: /^\/ban/,
     handler: (bot: TelegramBot) => async (msg: Message) => {
         const chatId = msg.chat.id;
-        const stateInfo = knownCommands.get(UserStates.getUserState(chatId))!;
-        if (!stateInfo.commands.some(regex => msg.text?.match(regex))
-                && (!stateInfo.allowPlain || msg.text?.startsWith("/"))) {
-            Logger.getInfoLogger().log(`User ${chatId} executed an unknown command: \"${msg.text}\"`);
-            bot.sendMessage(chatId, stateInfo.errorMessage);
+        if (UserManager.isAdmin(chatId)) {
+            Logger.getInfoLogger().commandLog(chatId, msg.text);
+            const textBlocks = msg.text.split(' ');
+            if (textBlocks.length === 1) {
+                bot.sendMessage(chatId, 'Invalid command usage.');
+                return;
+            }
+            
+            const targetChatId = Number(textBlocks[1]);
+            if (isNaN(targetChatId)) {
+                bot.sendMessage(chatId, 'Invalid command usage.');
+                return;
+            }
+
+            if (!await UserManager.isUserExist(targetChatId)) {
+                bot.sendMessage(chatId, 'User not found.');
+                return;
+            }
+
+            await UserManager.blockUser(targetChatId);
+            bot.sendMessage(chatId, 'User blocked.');
         }
-    }
+    },
+};
+
+const unblockHandler: TextHandler = {
+    command: /^\/unban/,
+    handler: (bot: TelegramBot) => async (msg: Message) => {
+        const chatId = msg.chat.id;
+        if (UserManager.isAdmin(chatId)) {
+            Logger.getInfoLogger().commandLog(chatId, msg.text);
+            const textBlocks = msg.text.split(' ');
+            if (textBlocks.length === 1) {
+                bot.sendMessage(chatId, 'Invalid command usage.');
+                return;
+            }
+
+            const targetChatId = Number(textBlocks[1]);
+            if (isNaN(targetChatId)) {
+                bot.sendMessage(chatId, 'Invalid command usage.');
+                return;
+            }
+
+            if (!await UserManager.isUserExist(targetChatId)) {
+                bot.sendMessage(chatId, 'User not found.');
+                return;
+            }
+
+            await UserManager.unblockUser(targetChatId);
+            bot.sendMessage(chatId, 'User unblocked.');
+        }
+    },
 };
 
 export const textUserHandlers: Array<TextHandler> = [
@@ -227,10 +273,11 @@ export const textUserHandlers: Array<TextHandler> = [
     listHandler,
     editHandler,
     deleteHandler,
+    blockHandler,
+    unblockHandler,
 ];
 
 export const plainUserHandlers: Array<PlainHandler> = [
-    errorHandler,
     timezoneConfirmHandler,
 ];
 

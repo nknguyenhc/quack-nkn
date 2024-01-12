@@ -412,7 +412,12 @@ export const knownCommands: Map<STATE, KnownCommandHelper> = new Map<STATE, Know
             + '/cancel - cancel deleting website tracker',
         allowPlain: true,
     }],
-])
+]);
+
+export const knownAdminCommands: Array<RegExp> = [
+    /^\/ban/,
+    /^\/unban/,
+];
 
 type Dict = {
     [key: number]: {
