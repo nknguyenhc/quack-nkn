@@ -1,3 +1,25 @@
 mixin dashboard
-    .dashboard
-        .dashboard-title Nothing here yet!
+    .dashboard(x-data="dashboard")
+        .dashboard-title Dashboard 
+        .dashboard-description(x-text="description")
+        +usergraph
+        +usagegraph 
+        +timezonegraph 
+
+mixin usergraph 
+    .dashboard-data(
+        x-data="dashboardData('Number of users over time', 'rgb(66, 135, 245)', 'user-graph', 'https://run.mocky.io/v3/16f55e8b-3498-4fd2-85fc-94a0940cf8fe')"
+    )
+        #user-graph
+
+mixin usagegraph 
+    .dashboard-data(
+        x-data="dashboardData('Total number of reminders and trackers over time', 'rgb(9, 244, 129)', 'usage-graph', 'https://run.mocky.io/v3/88b3d542-fb7d-403f-8ea1-ac281370cec8')"
+    )
+        #usage-graph
+
+mixin timezonegraph 
+    .dashboard-data(
+        x-data="dashboardData('Number of users by timezone', 'rgb(255, 119, 231)', 'timezone-graph', 'https://run.mocky.io/v3/edab6d69-c68f-4c88-81e4-d5761e25a667')"
+    )
+        #timezone-graph
