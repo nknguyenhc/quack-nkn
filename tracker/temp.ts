@@ -1,8 +1,9 @@
 import { Model } from "sequelize";
-import { getRandomString, numberToTimeString } from "../utils/primitives";
+import { datetimeToDashboardTime, getRandomString, numberToTimeString } from "../utils/primitives";
 import { FrequencyType } from "../utils/schedule";
 import { Tracker, TrackerType } from './db';
 import Logger from "../logging/logger";
+import { TrackerCount } from "../dashboard/db";
 
 type TrackType = {
     link?: string,
@@ -96,6 +97,19 @@ export class TrackMemory {
             time: time,
             userChatId: String(chatId),
         });
+        const currentDashboardTime = datetimeToDashboardTime(new Date());
+        await TrackerCount.findOne({ where: { month: currentDashboardTime } })
+            .then(async count => {
+                if (count === null) {
+                    await TrackerCount.create({
+                        month: currentDashboardTime,
+                    });
+                } else {
+                    await TrackerCount.update({
+                        count: count.dataValues.count + 1,
+                    }, { where: { month: currentDashboardTime } });
+                }
+            });
         return {
             id,
             link,

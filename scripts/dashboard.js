@@ -3,7 +3,7 @@ document.addEventListener('alpine:init', () => {
         description: '',
         init() {
             const now = new Date();
-            this.description = `Nov 2023 - ${now.toLocaleDateString('default', { month: 'short' })} ${now.getFullYear()}`;
+            this.description = `Nov 2023 - ${now.toLocaleDateString('default', { month: 'short', timeZone: 'UTC' })} ${now.getUTCFullYear()}`;
         },
     }));
 });

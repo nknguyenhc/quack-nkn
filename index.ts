@@ -25,6 +25,8 @@ import { loggingMiddleware } from "./logging/middleware";
 import userStartJob from "./users/start";
 import { UserManager } from './users/temp';
 import UserStates, { knownAdminCommands, knownCommands } from './utils/states';
+import { TrackerCount, ReminderCount } from './dashboard/db';
+import dashboardRouter from './dashboard/router';
 
 dotenv.config();
 
@@ -107,6 +109,7 @@ function serve() {
     app.use('/static', express.static('static'));
     app.use('/user', adminRouter);
     app.use('/api/feedback', feedbackRouter);
+    app.use('/api/dashboard', dashboardRouter);
 
     app.get('/', (req, res) => {
         res.sendFile(__dirname + '/templates/index.html');
@@ -215,6 +218,8 @@ async function migrate() {
     await Admin.sync({ alter: true });
     await File.sync({ alter: true });
     await Feedback.sync({ alter: true });
+    await TrackerCount.sync({ alter: true });
+    await ReminderCount.sync({ alter: true });
 }
 
 async function clear() {
@@ -224,6 +229,8 @@ async function clear() {
     await Admin.sync({ force: true });
     await File.sync({ force: true});
     await Feedback.sync({ force: true });
+    await TrackerCount.sync({ force: true });
+    await ReminderCount.sync({ force: true });
 }
 
 function setup() {

@@ -1,4 +1,4 @@
-import { DataTypes, Model } from 'sequelize';
+import { CreationOptional, DataTypes, Model } from 'sequelize';
 import { getConnection } from '../utils/db';
 import { Reminder } from '../reminder/db';
 import dotenv from 'dotenv';
@@ -17,7 +17,12 @@ type UserType = {
     isBlocked: boolean,
 }
 
-export const User = sequelize.define<Model<UserType>>('User', {
+class UserWithTimestamp extends Model<UserType> {
+    declare createdAt: CreationOptional<Date>;
+    declare updatedAt: CreationOptional<Date>;
+}
+
+export const User = sequelize.define<UserWithTimestamp>('User', {
     chatId: {
         type: DataTypes.STRING,
         primaryKey: true,
