@@ -1,3 +1,25 @@
 mixin dashboard
-    .dashboard
-        .dashboard-title Nothing here yet!
+    .dashboard(x-data="dashboard")
+        .dashboard-title Dashboard 
+        .dashboard-description(x-text="description")
+        +usergraph
+        +usagegraph 
+        +timezonegraph 
+
+mixin usergraph 
+    .dashboard-data(
+        x-data="dashboardData('Number of new users over time', 'rgb(66, 135, 245)', 'user-graph', '/api/dashboard/user')"
+    )
+        #user-graph
+
+mixin usagegraph 
+    .dashboard-data(
+        x-data="dashboardData('Number of new reminders and trackers over time', 'rgb(9, 244, 129)', 'usage-graph', '/api/dashboard/usage')"
+    )
+        #usage-graph
+
+mixin timezonegraph 
+    .dashboard-data(
+        x-data="dashboardData('Number of users by timezone', 'rgb(255, 119, 231)', 'timezone-graph', '/api/dashboard/timezone')"
+    )
+        #timezone-graph

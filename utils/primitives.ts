@@ -161,3 +161,13 @@ export const getRandomString = (): string => {
 }
 
 export const sleep = async (time: number) => await new Promise(resolve => setTimeout(resolve, time * 1000));
+
+export const datetimeToDashboardTime = (date: Date): number => (date.getUTCFullYear() - 2023) * 12 + (date.getUTCMonth());
+
+export const dateToString = (date: Date): string =>
+    `${date.toLocaleString('default', { month: 'short', timeZone: 'UTC' })} ${date.getUTCFullYear()}`;
+
+export const dashboardTimeToString = (time: number): string => {
+    const date = new Date(Math.floor(time / 12) + 2023, time % 12 + 1);
+    return dateToString(date);
+}

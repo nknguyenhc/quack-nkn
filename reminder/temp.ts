@@ -1,7 +1,8 @@
 import { Reminder, ReminderType } from "./db";
-import { getRandomString, numberToTimeString } from '../utils/primitives';
+import { datetimeToDashboardTime, getRandomString, numberToTimeString } from '../utils/primitives';
 import { FrequencyType } from "../utils/schedule";
 import Logger from "../logging/logger";
+import { ReminderCount } from "../dashboard/db";
 
 type ReminderTemp = {
     content?: string,
@@ -60,6 +61,19 @@ export class ReminderMemory {
             userChatId: String(chatId),
             time: ReminderMemory.#reminders[chatId].time,
         });
+        const currentDashboardTime = datetimeToDashboardTime(new Date());
+        await ReminderCount.findOne({ where: { month: currentDashboardTime } })
+            .then(async count => {
+                if (count === null) {
+                    await ReminderCount.create({
+                        month: currentDashboardTime,
+                    });
+                } else {
+                    await ReminderCount.update({
+                        count: count.dataValues.count + 1,
+                    }, { where: { month: currentDashboardTime } });
+                }
+            });
         return id;
     }
 }
