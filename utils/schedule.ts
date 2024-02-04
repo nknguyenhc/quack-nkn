@@ -52,8 +52,19 @@ export const setReminder = ({ number, frequency, job, isValid, timezone }: {
 };
 
 const scheduleJob = (time: Date, job: () => void) => {
-    if (time.getTime() - new Date().getTime() > 0) {
-        setTimeout(job, time.getTime() - new Date().getTime());
+    Logger.getDebugLogger().log(`Scheduling a job at time ${time}`);
+    const timeDifference = time.getTime() - new Date().getTime();
+    if (timeDifference <= 0) {
+        return;
+    }
+    
+    const maxDifference = 2e9;
+    if (timeDifference < maxDifference) {
+        setTimeout(job, timeDifference);
+    } else {
+        setTimeout(() => {
+            scheduleJob(new Date(time.getTime() - maxDifference), job);
+        }, maxDifference);
     }
 }
 
