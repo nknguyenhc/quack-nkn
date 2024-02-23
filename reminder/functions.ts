@@ -184,7 +184,9 @@ export const addReminderWithNumber = async ({
             id: id,
         }
     }).then(reminder => reminder !== null);
-    const job = () => bot.sendMessage(chatId, message);
+    const job = async () => {
+        await bot.sendMessage(chatId, message);
+    };
     const loggingInfo = JSON.stringify({
         id: id,
         frequency: frequency,
@@ -244,7 +246,9 @@ export const editReminderWithNumber = async ({
     const isValid = () => Reminder.findOne({
         where: { id: id },
     }).then(reminder => reminder !== null);
-    const job = () => bot.sendMessage(chatId, content);
+    const job = async () => {
+        await bot.sendMessage(chatId, content);
+    };
     const loggingInfo = JSON.stringify({
         id: id,
         frequency: frequency,

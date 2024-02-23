@@ -10,7 +10,9 @@ const reminderStartJob: StartBotJob = async (bot: TelegramBot) => {
         if (reminder.dataValues.frequency === 'once' && reminder.dataValues.time * 1000 < new Date().getTime()) {
             return;
         }
-        const job = () => bot.sendMessage(reminder.dataValues.userChatId, reminder.dataValues.content);
+        const job = async () => {
+            await bot.sendMessage(reminder.dataValues.userChatId, reminder.dataValues.content);
+        };
         const reminderId = reminder.dataValues.id;
         const isValid = () => Reminder.findOne({
             where: {

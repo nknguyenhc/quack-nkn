@@ -149,7 +149,7 @@ export const screenshot = async ({
     await page.screenshot({
         path: './media/' + filename + '.jpg',
     });
-    sendPhoto({
+    await sendPhoto({
         bot: bot,
         chatId: chatId,
         filename: filename,

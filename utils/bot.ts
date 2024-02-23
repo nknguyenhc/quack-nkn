@@ -2,7 +2,7 @@ import { unlink } from "fs";
 import TelegramBot from "node-telegram-bot-api"
 import Logger from "../logging/logger";
 
-export const sendPhoto = ({
+export const sendPhoto = async ({
     bot,
     filename,
     chatId,
@@ -12,8 +12,8 @@ export const sendPhoto = ({
     filename: string,
     chatId: number,
     caption: string,
-}): void => {
-    bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
+}): Promise<void> => {
+    await bot.sendPhoto(chatId, 'media/' + filename + '.jpg', {
         caption: caption,
     }, {
         contentType: 'image/jpeg',

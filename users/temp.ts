@@ -62,7 +62,9 @@ export class TimezoneTemp {
             const isValid = () => Reminder.findOne({
                 where: { id: newId },
             }).then(reminder => reminder !== null);
-            const job = () => bot.sendMessage(chatId, content);
+            const job = async () => {
+                await bot.sendMessage(chatId, content);
+            };
             setReminder({
                 number: newScheduledTime,
                 frequency: frequency,

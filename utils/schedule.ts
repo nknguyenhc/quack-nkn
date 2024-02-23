@@ -5,7 +5,7 @@ export type FrequencyType = 'daily' | 'weekly' | 'once';
 export const setReminder = ({ number, frequency, job, isValid, timezone }: {
     number: number,
     frequency: FrequencyType,
-    job: () => void,
+    job: () => Promise<void>,
     isValid: () => Promise<boolean>,
     timezone: number,
 }): void => {
@@ -14,7 +14,7 @@ export const setReminder = ({ number, frequency, job, isValid, timezone }: {
             scheduleJob(getNearestTime(number, timezone), async () => {
                 if (await isValid()) {
                     try {
-                        job();
+                        await job();
                     } catch (e) {
                         Logger.getWarningLogger().log(`Failed to execute scheduled job, { number: ${number}, frequency: ${frequency}, timezone: ${timezone} }`);
                         Logger.getDebugLogger().log(e);
@@ -27,7 +27,7 @@ export const setReminder = ({ number, frequency, job, isValid, timezone }: {
             scheduleJob(getNearestDateTime(Math.floor(number / 4), number % 4, timezone), async () => {
                 if (await isValid()) {
                     try {
-                        job();
+                        await job();
                     } catch (e) {
                         Logger.getWarningLogger().log(`Failed to execute scheduled job, { number: ${number}, frequency: ${frequency}, timezone: ${timezone} }`);
                         Logger.getDebugLogger().log(e);
@@ -40,7 +40,7 @@ export const setReminder = ({ number, frequency, job, isValid, timezone }: {
             scheduleJob(new Date(number * 1000), async () => {
                 if (await isValid()) {
                     try {
-                        job();
+                        await job();
                     } catch (e) {
                         Logger.getWarningLogger().log(`Failed to execute scheduled job, { number: ${number}, frequency: ${frequency}, timezone: ${timezone} }`);
                         Logger.getDebugLogger().log(e);
