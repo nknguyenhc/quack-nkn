@@ -20,6 +20,8 @@ export const launchBrowserAndPage = async () => {
         ]
     });
     const page = await browser.newPage();
+    const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36';
+    page.setUserAgent(ua);
     page.setViewport({
         width: 1440,
         height: 715,

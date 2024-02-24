@@ -121,7 +121,7 @@ const trackConfirmHandler: PlainHandler = {
                         + "For your reference, 750 pixels are around the height of your browser on computer.\n"
                         + "For advanced user, you may use query selector. /selector for more info.");
             } else if (reply === 'no' || reply === 'n') {
-                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.NORMAL), 100);
                 TrackMemory.deleteUser(chatId);
                 bot.sendMessage(chatId, "Cancelled adding the website tracker. "
                         + "If you believe the above was a bug, please contact my boss at nknguyenhc@gmail.com");
@@ -450,7 +450,7 @@ const trackEditLinkConfirmHandler: PlainHandler = {
                     + "For your reference, 750 pixels are around the height of your browser on computer.\n"
                     + "For advanced user, you may use query selector. /selector for more info.");
             } else if (reply === 'no' || reply === 'n') {
-                UserStates.setUserState(chatId, UserStates.STATE.NORMAL);
+                setTimeout(() => UserStates.setUserState(chatId, UserStates.STATE.NORMAL), 100);
                 TrackEditMemory.deleteUser(chatId);
                 bot.sendMessage(chatId, "Cancelled editing the website tracker. "
                     + "If you believe the above was a bug, please contact my boss at nknguyenhc@gmail.com");
