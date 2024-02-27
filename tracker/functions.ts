@@ -124,7 +124,9 @@ export const checkPageValidity = async ({
 }): Promise<boolean> => {
     try {
         Logger.getInfoLogger().log(`Visiting link: ${link}`);
-        await page.goto(link);
+        await page.goto(link, {
+            waitUntil: ['domcontentloaded', 'networkidle2'],
+        });
         return true;
     } catch (e) {
         Logger.getErrorLogger().log(`Unable to visit link ${link}`);
