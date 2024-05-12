@@ -1,0 +1,17 @@
+# Ignore large dependency folder
+node_modules/
+
+# Ignore version control system files
+.git/
+.gitignore
+
+# Ignore build artifacts
+media/
+static/
+styles-compiled/
+templates/
+uploads/
+
+# Ignore various other common log or temporary files
+*.log
+npm-debug.log
