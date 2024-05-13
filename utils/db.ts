@@ -1,4 +1,4 @@
-import { Sequelize } from "sequelize";
+import { Dialect, Sequelize } from "sequelize";
 
 export const getConnection = () => new Sequelize(
     process.env.DATABASE_NAME as string,
@@ -7,7 +7,7 @@ export const getConnection = () => new Sequelize(
     {
         host: process.env.DATABASE_HOST as string,
         port: Number(process.env.DATABASE_PORT),
-        dialect: 'postgres',
+        dialect: process.env.DATABASE_DIALECT as Dialect,
         logging: false,
     }
 );

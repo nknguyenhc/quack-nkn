@@ -1,8 +1,12 @@
-FROM node:16
+FROM node:20
 
 WORKDIR .
 
 COPY . .
+
+RUN npm install
+
+RUN npm run migrate && npm run setup
 
 # We don't need the standalone Chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
@@ -15,10 +19,6 @@ RUN apt-get update && apt-get install curl gnupg -y \
   && apt-get update \
   && apt-get install google-chrome-stable -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
-
-RUN npm install
-
-RUN npm run setup
 
 EXPOSE 80
 
