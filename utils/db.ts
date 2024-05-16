@@ -1,4 +1,5 @@
-import { Dialect, Sequelize } from "sequelize";
+import { Dialect, Model, ModelStatic, Sequelize } from "sequelize";
+import { MakeNullishOptional } from "sequelize/types/utils";
 
 export const getConnection = () => new Sequelize(
     process.env.DATABASE_NAME as string,
@@ -11,3 +12,15 @@ export const getConnection = () => new Sequelize(
         logging: false,
     }
 );
+
+export const extractTable = async <T extends any>(table: ModelStatic<Model<T, T>>): Promise<Array<T>> => {
+    return table.findAll().then(values => values.map(value => value.dataValues));
+};
+
+export const importTable = async <T extends object>(data: Array<MakeNullishOptional<T>>,
+        table: ModelStatic<Model<T, T>>): Promise<void> => {
+    await table.sync({ force: true });
+    for (const dataPoint of data) {
+        await table.create(dataPoint);
+    }
+};

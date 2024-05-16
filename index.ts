@@ -25,6 +25,7 @@ import { loggingMiddleware } from "./logging/middleware";
 import userStartJob from "./users/start";
 import { UserManager } from './users/temp';
 import UserStates, { knownAdminCommands, knownCommands } from './utils/states';
+import { extractTable, importTable } from './utils/db';
 
 dotenv.config();
 
@@ -348,6 +349,28 @@ async function createAdmin() {
     });
 }
 
+async function extractData() {
+    const data = {
+        user: await extractTable(User),
+        reminder: await extractTable(Reminder),
+        tracker: await extractTable(Tracker),
+        admin: await extractTable(Admin),
+        file: await extractTable(File),
+        feedback: await extractTable(Feedback),
+    };
+    writeFileSync('data.json', JSON.stringify(data));
+}
+
+async function importData() {
+    const data = JSON.parse(readFileSync('data.json').toString());
+    await importTable(data.user, User);
+    await importTable(data.reminder, Reminder);
+    await importTable(data.tracker, Tracker);
+    await importTable(data.admin, Admin);
+    await importTable(data.file, File);
+    await importTable(data.feedback, Feedback);
+}
+
 switch (process.argv[2]) {
     case 'migrate':
         migrate();
@@ -370,5 +393,11 @@ switch (process.argv[2]) {
         break;
     case 'createadmin':
         createAdmin();
+        break;
+    case 'extractdata':
+        extractData();
+        break;
+    case 'importdata':
+        importData();
         break;
 }

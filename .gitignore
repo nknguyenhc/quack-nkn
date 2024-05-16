@@ -46,6 +46,7 @@ templates/
 static/
 styles-compiled/
 uploads/
+data.json
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/

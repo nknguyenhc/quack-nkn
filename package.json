@@ -13,7 +13,9 @@
     "setup": "ts-node index.ts setup",
     "createadmin": "ts-node index.ts createadmin",
     "migrate": "ts-node index.ts migrate",
-    "clear": "ts-node index.ts clear"
+    "clear": "ts-node index.ts clear",
+    "extract": "ts-node index.ts extractdata",
+    "import": "ts-node index.ts importdata"
   },
   "author": "Nguyen",
   "license": "ISC",
