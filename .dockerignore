@@ -15,3 +15,4 @@ uploads/
 # Ignore various other common log or temporary files
 *.log
 npm-debug.log
+data.json
