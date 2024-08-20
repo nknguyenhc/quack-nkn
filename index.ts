@@ -13,7 +13,7 @@ import Logger from './logging/logger';
 import express from "express";
 import pug from "pug";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdir, readdirSync, writeFile, writeFileSync } from "fs";
-import sass from "node-sass";
+import * as sass from "sass";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import adminRouter from "./admins/router";
@@ -371,33 +371,38 @@ async function importData() {
     await importTable(data.feedback, Feedback);
 }
 
-switch (process.argv[2]) {
-    case 'migrate':
-        migrate();
-        break;
-    case 'clear':
-        clear();
-        break;
-    case 'bot':
-        main();
-        break;
-    case 'serve':
-        serve();
-        break;
-    case 'both':
-        main();
-        serve();
-        break;
-    case 'setup':
-        setup();
-        break;
-    case 'createadmin':
-        createAdmin();
-        break;
-    case 'extractdata':
-        extractData();
-        break;
-    case 'importdata':
-        importData();
-        break;
+if (process.argv.length < 3) {
+    main();
+    serve();
+} else {
+    switch (process.argv[2]) {
+        case 'migrate':
+            migrate();
+            break;
+        case 'clear':
+            clear();
+            break;
+        case 'bot':
+            main();
+            break;
+        case 'serve':
+            serve();
+            break;
+        case 'both':
+            main();
+            serve();
+            break;
+        case 'setup':
+            setup();
+            break;
+        case 'createadmin':
+            createAdmin();
+            break;
+        case 'extractdata':
+            extractData();
+            break;
+        case 'importdata':
+            importData();
+            break;
+    }
 }

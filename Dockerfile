@@ -2,13 +2,11 @@ FROM node:20
 
 WORKDIR .
 
-COPY package*.json .
+# Install bun
+RUN curl -fsSL https://bun.sh/install | bash
 
-RUN npm install
-
-COPY . .
-
-RUN npm run migrate && npm run setup
+# Add bun to PATH
+ENV PATH="/root/.bun/bin:${PATH}"
 
 # We don't need the standalone Chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
@@ -22,6 +20,16 @@ RUN apt-get update && apt-get install curl gnupg -y \
   && apt-get install google-chrome-stable -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
+COPY package*.json .
+
+RUN npm install
+
+RUN npm install pm2 -g
+
+COPY . .
+
+RUN npm run migrate && npm run setup
+
 EXPOSE 80
 
-CMD ["npm", "run", "run"]
+CMD ["pm2-runtime", "index.ts"]
