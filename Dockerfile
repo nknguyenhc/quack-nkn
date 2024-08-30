@@ -32,4 +32,4 @@ RUN npm run migrate && npm run setup
 
 EXPOSE 80
 
-CMD ["pm2-runtime", "index.ts"]
+CMD ["pm2-runtime", "ecosystem.config.js"]
