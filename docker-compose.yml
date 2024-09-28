@@ -1,5 +1,23 @@
 services:
+  postgres:
+    image: postgres:13.1
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_PORT: ${DATABASE_PORT}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
   node:
     build: .
     ports:
       - "80:${PORT}"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres:
+    driver: local
