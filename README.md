@@ -8,7 +8,7 @@ Have you ever wanted to track when a particular job opening will be open for app
 
 Bot is available at: [https://t.me/website_tracker_bot](https://t.me/website_tracker_bot)
 
-Website: [https://quacknkn.click/](https://quacknkn.click/)
+Website: [https://quack-nkn.nknguyenhc.net/](https://quack-nkn.nknguyenhc.net/)
 
 ## Features
 
