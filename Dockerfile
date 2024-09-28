@@ -20,6 +20,9 @@ RUN apt-get update && apt-get install curl gnupg -y \
   && apt-get install google-chrome-stable -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
+# Install nginx
+RUN apt-get update && apt-get install nginx -y
+
 COPY package*.json .
 
 RUN npm install
@@ -27,5 +30,8 @@ RUN npm install
 RUN npm install pm2 -g
 
 COPY . .
+
+# Copy nginx config
+COPY ./nginx/nginx.conf /etc/nginx
 
 CMD ["sh", "./start.sh"]
