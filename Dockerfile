@@ -34,4 +34,7 @@ COPY . .
 # Copy nginx config
 COPY ./nginx/nginx.conf /etc/nginx
 
+# Copy certificates
+COPY ./certificate /etc/nginx/ssl
+
 CMD ["sh", "./start.sh"]

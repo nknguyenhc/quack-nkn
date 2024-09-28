@@ -48,6 +48,9 @@ styles-compiled/
 uploads/
 data.json
 
+# certificate
+certificate/
+
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
