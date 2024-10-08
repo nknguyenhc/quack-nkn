@@ -241,6 +241,10 @@ function setup() {
             mkdirSync(folder);
         }
     }
+
+    if (process.env.ADMIN_USERNAME != undefined && process.env.ADMIN_PASSWORD != undefined) {
+        createUser(process.env.ADMIN_USERNAME, process.env.ADMIN_PASSWORD);
+    }
 }
 
 async function createAdmin() {
