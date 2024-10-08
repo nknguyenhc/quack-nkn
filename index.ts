@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 import { User } from './users/db';
 import { Reminder } from './reminder/db';
 import { Tracker } from './tracker/db';
-import { Admin, createUser, isUsernameTaken } from './admins/db';
+import { Admin, authenticate, createUser, isUsernameTaken } from './admins/db';
 import trackStartJob from './tracker/start';
 import Logger from './logging/logger';
 import express from "express";
@@ -27,7 +27,9 @@ import { UserManager } from './users/temp';
 import UserStates, { knownAdminCommands, knownCommands } from './utils/states';
 import { extractTable, importTable } from './utils/db';
 
-dotenv.config();
+dotenv.config({
+    override: true,
+});
 
 function main() {
     const bot = new TelegramBot(process.env.TOKEN as string, { polling: true });
@@ -227,7 +229,7 @@ async function clear() {
     await Feedback.sync({ force: true });
 }
 
-function setup() {
+async function setup() {
     const folders: Array<string> = [
         "media",
         "static",
@@ -243,7 +245,10 @@ function setup() {
     }
 
     if (process.env.ADMIN_USERNAME != undefined && process.env.ADMIN_PASSWORD != undefined) {
-        createUser(process.env.ADMIN_USERNAME, process.env.ADMIN_PASSWORD);
+        const user = await authenticate(process.env.ADMIN_USERNAME, process.env.ADMIN_PASSWORD);
+        if (!user) {
+            await createUser(process.env.ADMIN_USERNAME, process.env.ADMIN_PASSWORD);
+        }
     }
 }
 
